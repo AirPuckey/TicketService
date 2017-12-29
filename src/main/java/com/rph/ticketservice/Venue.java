@@ -8,28 +8,36 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+/**
+ * A {@code Venue} is an immutable class encapsulating the static (unchanging) state of the venue.
+ * It consists of a two dimensional grid of seats. There is also an unmodifiable list containing
+ * those same seats in a list ordered by decreasing bestness (earlier seats in the list are better
+ * than those later in the list).
+ */
 public class Venue {
 
+    public static final int MAXIMUM_ROWS = 1000;
+
+    public static final int MAXIMUM_SEATS_PER_ROW = 500;
+
+    /** Number of rows of seats at this venue. */
     private final int numRows;
 
+    /** Number of seats in each row at this venue. Each row contains the same number of seats. */
     private final int numSeatsPerRow;
 
-    /**
-     * List of seats, ordered by decreasing bestness
-     */
+    /** All the seats, ordered by decreasing bestness (lower index: better seat). */
     private final List<Seat> bestSeats;   // unmodifiable
 
-    /**
-     * Seats arranged in two dimensional grid
-     */
-    private final SeatGrid seatGrid;   // seatGrid[rowNumber][seatNumberInRow]
+    /** Two dimensional grid containing all the seats (rowNum x seatNumInRow). */
+    private final SeatGrid seatGrid;
 
 
-    public Venue(int numRows, int numSeatsPerRow, int bestRowNum) {
-        if (numRows <= 0 || numRows >= 1000) {
+    public Venue(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
+        if (numRows <= 0 || numRows >= MAXIMUM_ROWS) {
             throw new IllegalArgumentException("bad rows: " + numRows);
         }
-        if (numSeatsPerRow <= 0 || numSeatsPerRow >= 500) {
+        if (numSeatsPerRow <= 0 || numSeatsPerRow >= MAXIMUM_SEATS_PER_ROW) {
             throw new IllegalArgumentException("bad seatsPerRow: " + numSeatsPerRow);
         }
         if (bestRowNum < 0 || bestRowNum >= numRows) {
@@ -56,15 +64,15 @@ public class Venue {
         return numSeatsPerRow;
     }
 
-    public List<Seat> getCopyOfBestSeats(List<Seat> seats) {
-        seats.addAll(bestSeats);
-        return seats;
+    public List<Seat> getBestSeats() {
+        return bestSeats;
     }
 
     public SeatGrid getSeatGrid() {
         return seatGrid;
     }
 
+    @VisibleForTesting
     static List<Seat> getBestSeats(int numRows, int numSeatsInRow, int bestRowNum) {
         final int numSeats = numRows * numSeatsInRow;
         int numSeatsPerAdd = (numSeatsInRow / numRows) * 2;
@@ -95,6 +103,7 @@ public class Venue {
         return bestSeats;
     }
 
+    @VisibleForTesting
     static int[] getBestRowNumbers(final int numRows, final int bestRowNum, final int len) {
         int[] rowNumSequence = new int[len];
         try {

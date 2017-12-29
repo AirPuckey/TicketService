@@ -27,6 +27,25 @@ public class Seat {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof Seat)) {
+            return false;
+        }
+        Seat that = (Seat) obj;
+        return this.getRowNum() == that.getRowNum()
+                && this.getSeatNumInRow() == that.getSeatNumInRow()
+                && this.getBestness() == that.getBestness();
+    }
+
+    @Override
+    public int hashCode() {
+        return (rowNum << 20) + (seatNumInRow << 10) + bestness;
+    }
+
+    @Override
     public String toString() {
         return rowNum + " x " + seatNumInRow;
     }

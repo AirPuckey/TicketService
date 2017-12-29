@@ -39,6 +39,10 @@ public class SeatHold {
         return seats;
     }
 
+    public boolean isExpired() {
+        return state == State.EXPIRED;
+    }
+
     public boolean expire() {
         if (state == State.HELD) {
             state = State.EXPIRED;
@@ -46,7 +50,10 @@ public class SeatHold {
         return state == State.EXPIRED;
     }
 
-    public boolean reserveSeats() {
+    public boolean reserveSeats() throws HoldExpiredException {
+        if (state == State.EXPIRED) {
+            throw new HoldExpiredException();
+        }
         if (state == State.HELD) {
             state = State.RESERVED;
         }

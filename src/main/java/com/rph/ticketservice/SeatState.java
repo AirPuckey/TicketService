@@ -25,6 +25,10 @@ public class SeatState extends Seat {
         availability = AVAILABLE;
     }
 
+    public boolean isHeld() {
+        return availability == HELD;
+    }
+
     public void setHeld() {
         availability = HELD;
     }

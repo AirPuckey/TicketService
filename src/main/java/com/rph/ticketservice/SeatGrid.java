@@ -45,4 +45,20 @@ public class SeatGrid {
     public Seat getSeat(int rowNum, int seatNumInRow) {
         return getSeatState(rowNum, seatNumInRow);
     }
+
+    public boolean isAvailable(int rowNum, int seatNumInRow) {
+        return seatStates[rowNum][seatNumInRow].isAvailable();
+    }
+
+    public void setAvailable(int rowNum, int seatNumInRow) {
+        seatStates[rowNum][seatNumInRow].setAvailable();
+    }
+
+    public boolean isHeld(int rowNum, int seatNumInRow) {
+        return seatStates[rowNum][seatNumInRow].isHeld();
+    }
+
+    public void setHeld(int rowNum, int seatNumInRow) {
+        seatStates[rowNum][seatNumInRow].setHeld();
+    }
 }
