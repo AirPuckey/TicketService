@@ -4,16 +4,14 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class VenueTest {
 
     @Test
-    public void testGetBestRowNumbers() {
-        int[] nextBestRows = Venue.getBestRowNumbers(10,3,200);
+    public void testBuildBestRowSeries() {
+        int[] nextBestRows = Venue.buildBestRowSeries(10,3,200);
         assertEquals(200, nextBestRows.length);
 
         assertEquals(3, nextBestRows[0]);
@@ -28,8 +26,8 @@ public class VenueTest {
     }
 
     @Test
-    public void testGetBestSeats() {
-        List<Seat> bestSeats = Venue.getBestSeats(10, 20, 4);
+    public void testBuildBestSeatsList() {
+        List<Seat> bestSeats = Venue.buildBestSeatsList(10, 20, 4);
 
         assertEquals(4, bestSeats.get(0).getRowNum());
         assertEquals(9, bestSeats.get(0).getSeatNumInRow());
@@ -52,47 +50,73 @@ public class VenueTest {
     }
 
     @Test
-    public void testBuildSeatGrid() {
+    public void testConstructor() {
+        buildAndValidateVenue(10, 20, 4);
+        try {
+            buildAndValidateVenue(-1, 20, 4);
+            fail("Exception expected!");
+        } catch (IllegalArgumentException e) {
+            // expected exception
+        }
+        try {
+            buildAndValidateVenue(10, -1, 4);
+            fail("Exception expected!");
+        } catch (IllegalArgumentException e) {
+            // expected exception
+        }
+        try {
+            buildAndValidateVenue(10, 20, -1);
+            fail("Exception expected!");
+        } catch (IllegalArgumentException e) {
+            // expected exception
+        }
+    }
+
+    @Test
+    public void testSettersAndGetters() {
+        Venue venue = new Venue(10, 20, 4);
+        assertEquals(10, venue.getNumberOfRows());
+        assertEquals(20, venue.getNumberOfSeatsPerRow());
+        assertEquals(10 * 20, venue.getNumberOfSeats());
+        assertBestAvailableSeatsListIsValid(10, 20, venue.getBestSeats());
     }
 
     public static Venue buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {
         Venue venue = new Venue(numRows, numSeatsPerRow, bestRowNum);
         List<Seat> bestSeats = venue.getBestSeats();
-        SeatGrid seatGrid = venue.getSeatGrid();
-        assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestSeats, seatGrid);
+        assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestSeats);
         assertEquals(numRows * numSeatsPerRow, bestSeats.size());   // list is full (no missing seats)
         return venue;
     }
 
+    /**
+     * Verifies that:
+     *  1) each seat's coordinates are in range;
+     *  2) there are no duplicate seats (coordinate pairs are unique);
+     *  3) list is ordered by increasing bestness numeric value (decreasing bestness).
+     *
+     * @param numRows number of rows (to check the seat's row rnge)
+     * @param numSeatsPerRow number of seats per row (to check the seat's seat in row range
+     * @param bestAvailableSeats the ordered list to be verifies
+     */
     public static void assertBestAvailableSeatsListIsValid(final int numRows, final int numSeatsPerRow,
-                                                           List<Seat> bestAvailableSeats, SeatGrid seatGrid) {
-        // verify that:
-        //  1) each seat's coordinates are in range;
-        //  2) each seat is available;
-        //  3) there are no duplicate seats (coordinates are unique);
-        //  4) list is ordered by increasing bestness number
-        boolean[][] seatIsAvailable = buildBooleanGrid(numRows, numSeatsPerRow);
-        int highestBestnesSoFar = -1;
+                                                           List<Seat> bestAvailableSeats) {
+        boolean[][] seatIsContainedInList = new boolean[numRows][];
+        for (int rowNum = 0; rowNum < numRows; rowNum++) {
+            seatIsContainedInList[rowNum] = new boolean[numSeatsPerRow];
+        }
+        int highestBestnesValueSoFar = -1;
         for (Seat seat : bestAvailableSeats) {
             final int rowNum = seat.getRowNum();
             final int seatNumInRow = seat.getSeatNumInRow();
             assertTrue("seat: bad row number: " + rowNum, rowNum >= 0 && rowNum < numRows);
             assertTrue("seat: bad seat number in row: " + seatNumInRow,
                        seatNumInRow >= 0 && seatNumInRow < numSeatsPerRow);
-            assertTrue(seatGrid.isAvailable(rowNum, seatNumInRow));
-            assertFalse(seatIsAvailable[seat.getRowNum()][seat.getSeatNumInRow()]);
-            seatIsAvailable[seat.getRowNum()][seat.getSeatNumInRow()] = true;
-            assertTrue(seat.getBestness() > highestBestnesSoFar);
-            highestBestnesSoFar = seat.getBestness();
-            assertTrue(highestBestnesSoFar < numRows * numSeatsPerRow);
+            assertFalse(seatIsContainedInList[seat.getRowNum()][seat.getSeatNumInRow()]);
+            seatIsContainedInList[seat.getRowNum()][seat.getSeatNumInRow()] = true;
+            assertTrue(seat.getBestness() > highestBestnesValueSoFar);
+            highestBestnesValueSoFar = seat.getBestness();
+            assertTrue(highestBestnesValueSoFar < numRows * numSeatsPerRow);
         }
-    }
-
-    public static boolean[][] buildBooleanGrid(int numRows, int numCols) {
-        boolean[][] bool = new boolean[numRows][];
-        for (int rowNum = 0; rowNum < numRows; rowNum++) {
-            bool[rowNum] = new boolean[numCols];
-        }
-        return bool;
     }
 }

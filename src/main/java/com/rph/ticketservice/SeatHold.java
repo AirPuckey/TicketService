@@ -39,6 +39,14 @@ public class SeatHold {
         return seats;
     }
 
+    public boolean isHeld() {
+        return state == State.HELD;
+    }
+
+    public boolean isReserved() {
+        return state == State.RESERVED;
+    }
+
     public boolean isExpired() {
         return state == State.EXPIRED;
     }
@@ -50,14 +58,11 @@ public class SeatHold {
         return state == State.EXPIRED;
     }
 
-    public boolean reserveSeats() throws HoldExpiredException {
+    public void reserveSeats() throws HoldExpiredException {
         if (state == State.EXPIRED) {
             throw new HoldExpiredException();
         }
-        if (state == State.HELD) {
-            state = State.RESERVED;
-        }
-        return state == State.RESERVED;
+        state = State.RESERVED;
     }
 
     static boolean isValidEmailAddress(String customerEmail) {

@@ -16,21 +16,22 @@ public class TicketServiceImplTest {
 
     private Venue venue;
     private List<Seat> bestSeats;   // unmodifiable
-    private SeatGrid seatGrid;
+    private Seats seats;
     private List<Seat> bestAvailableSeats;
 
     private void initialize(int numRows, int numSeatsPerRow) {
         venue = buildAndValidateVenue(numRows, numSeatsPerRow, (numRows - 1) / 2);
         bestSeats = venue.getBestSeats();
         bestAvailableSeats = new ArrayList<>(bestSeats);
-        seatGrid = venue.getSeatGrid();   // TODO: make test method
+//        seats = venue.getSeats();   // TODO: make test method
+        seats = new Seats(venue);
     }
 
     private void reset() {
         venue = null;
         bestSeats = null;
         bestAvailableSeats = null;
-        seatGrid = null;
+        seats = null;
     }
 
 
@@ -52,7 +53,7 @@ public class TicketServiceImplTest {
                 Seat seat = unavailableSeats.remove(unavailableSeats.size() - 1);
                 int result = TicketServiceImpl.insertSeatByBestness(seat, bestAvailableSeats, 0);
                 assertEquals(bestAvailableSeats.indexOf(seat) + 1, result);
-                VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats, seatGrid);
+                VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
             }
             assertEquals(bestSeats, bestAvailableSeats);
         } finally {
@@ -72,14 +73,14 @@ public class TicketServiceImplTest {
             int numSeatsInVenue = numRows * numSeatsPerRow;
             List<Seat> heldSeats;
             try {
-                heldSeats = TicketServiceImpl.getBestAdjacentSeats(numSeatsToBeHeld, bestAvailableSeats, seatGrid);
+                heldSeats = TicketServiceImpl.getBestAdjacentSeats(numSeatsToBeHeld, bestAvailableSeats, seats);
             } catch (NoSeatsAvailableException e) {
                 throw new RuntimeException(e);   // should not heppen
             }
-            VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats, seatGrid);
+            VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
             assertEquals(numSeatsInVenue, bestAvailableSeats.size() + heldSeats.size());
-            TicketServiceImpl.makeSeatsAvailable(heldSeats, bestAvailableSeats, seatGrid);
-            VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats, seatGrid);
+            TicketServiceImpl.makeSeatsAvailable(heldSeats, bestAvailableSeats, seats);
+            VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
             assertEquals(numSeatsInVenue, bestAvailableSeats.size());
         } finally {
             reset();
@@ -92,11 +93,11 @@ public class TicketServiceImplTest {
         List<Seat> heldSeats = new LinkedList<>();
         try {
             testHoldSeat(4, 9, heldSeats);
-            testHoldSeat(4, 10, heldSeats);
+            testHoldSeat(4, 11, heldSeats);
             testHoldSeat(3, 3, heldSeats);
             // try to hold a seat that's already held
             try {
-                TicketServiceImpl.holdSeat(3, 3, bestAvailableSeats, heldSeats, seatGrid);
+                TicketServiceImpl.holdSeat(3, 3, bestAvailableSeats, heldSeats, seats);
                 fail("expected exception not thrown!");
             } catch(RuntimeException e) {
                 // expected exception
@@ -107,12 +108,12 @@ public class TicketServiceImplTest {
     }
 
     private void testHoldSeat(int rowNum, int seatNumInRow, List<Seat> heldSeats) {
-        Seat seat = seatGrid.getSeat(rowNum, seatNumInRow);
+        Seat seat = seats.getSeat(rowNum, seatNumInRow);
         int numAvailableSeats = bestAvailableSeats.size();
         int numHeldSeats = heldSeats.size();
         assertFalse(heldSeats.contains(seat));
         assertTrue(bestAvailableSeats.contains(seat));
-        TicketServiceImpl.holdSeat(rowNum, seatNumInRow, bestAvailableSeats, heldSeats, seatGrid);
+        TicketServiceImpl.holdSeat(rowNum, seatNumInRow, bestAvailableSeats, heldSeats, seats);
         assertFalse(bestAvailableSeats.contains(seat));
         assertEquals(seat, heldSeats.get(heldSeats.size() - 1));
         assertEquals(numAvailableSeats - 1, bestAvailableSeats.size());
@@ -123,19 +124,19 @@ public class TicketServiceImplTest {
     public void testHoldSeats() {
         initialize(35, 40);
         try {
-            List<Seat> heldSeats1, heldSeats2, heldSeats3;
-            testHoldSeats(7, 10, 19, heldSeats1 = new LinkedList<>(), +1);
-            testHoldSeats(3, 12, 2, heldSeats2 = new LinkedList<>(), -1);
-            heldSeats3 = new LinkedList<>();
-            testHoldSeats(4, 34, 10, heldSeats3, +1);
-            testHoldSeats(3, 34, 9, heldSeats3, -1);
+            List<Seat> heldSeats;
+            testHoldSeats(7, 10, 19, new LinkedList<>(), +1);
+            testHoldSeats(3, 12, 2, new LinkedList<>(), -1);
+            heldSeats = new LinkedList<>();
+            testHoldSeats(4, 34, 10, heldSeats, +1);
+            testHoldSeats(3, 34, 9, heldSeats, -1);
         } finally {
             reset();
         }
     }
 
     private void testHoldSeats(int numSeats, int rowNum, int seatNumInRow, List<Seat> heldSeats, int direction) {
-        TicketServiceImpl.holdSeats(numSeats, rowNum, seatNumInRow, bestAvailableSeats, heldSeats, seatGrid, direction);
+        TicketServiceImpl.holdSeats(numSeats, rowNum, seatNumInRow, bestAvailableSeats, heldSeats, seats, direction);
         assertAdjacentAndHeld(heldSeats);
     }
 
@@ -144,13 +145,14 @@ public class TicketServiceImplTest {
         initialize(6, 6);
         try {
             List<List<Seat>> holds = new ArrayList<>();   // repository for heldSeats lists (so we don't lose any seats)
-            holds.add(testExtractAdjacentSeats(3, seatGrid.getSeat(2,2)));
-            holds.add(testExtractAdjacentSeats(6,seatGrid.getSeat(3,2)));
-            holds.add(testExtractAdjacentSeats(3,seatGrid.getSeat(0,0)));
-            holds.add(testExtractAdjacentSeats(3, seatGrid.getSeat(0,3)));
-            holds.add(testExtractAdjacentSeats(4, seatGrid.getSeat(4,2)));
+            holds.add(testExtractAdjacentSeats(3, seats.getSeat(2,2)));
+            holds.add(testExtractAdjacentSeats(6, seats.getSeat(3,2)));
+            holds.add(testExtractAdjacentSeats(3, seats.getSeat(0,0)));
+            holds.add(testExtractAdjacentSeats(3, seats.getSeat(0,3)));
+            holds.add(testExtractAdjacentSeats(4, seats.getSeat(4,2)));
+            assertEquals(5, holds.size());
             try {
-                holds.add(testExtractAdjacentSeats(7, seatGrid.getSeat(5,3)));
+                holds.add(testExtractAdjacentSeats(7, seats.getSeat(5,3)));
             } catch (RuntimeException e) {
                 // expected exception
             }
@@ -161,7 +163,7 @@ public class TicketServiceImplTest {
 
     private List<Seat> testExtractAdjacentSeats(int numSeatsNeeded, Seat initialSeat) {
         List<Seat> heldSeats = TicketServiceImpl.extractAdjacentSeats(numSeatsNeeded, initialSeat,
-                                                                      bestAvailableSeats, seatGrid);
+                                                                      bestAvailableSeats, seats);
         assertTrue(heldSeats.contains(initialSeat));
         assertAdjacentAndHeld(heldSeats);
         assertDisjoint(bestAvailableSeats, heldSeats);
@@ -172,23 +174,23 @@ public class TicketServiceImplTest {
     public void testGetNumberOfAdjacentAvailableSeats() {
         initialize(10, 20);
         try {
-            testExtractAdjacentSeats(4, seatGrid.getSeat(6, 9));
-            testExtractAdjacentSeats(4, seatGrid.getSeat(8, 9));
-            testExtractAdjacentSeats(4, seatGrid.getSeat(8, 0));
+            testExtractAdjacentSeats(4, seats.getSeat(6, 9));
+            testExtractAdjacentSeats(4, seats.getSeat(8, 9));
+            testExtractAdjacentSeats(4, seats.getSeat(8, 0));
             assertEquals(8,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(6, 4), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(6, 4), seats));
             assertEquals(8,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(6, 3), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(6, 3), seats));
             assertEquals(8,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(6, 1), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(6, 1), seats));
             assertEquals(8,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(6, 6), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(6, 6), seats));
             assertEquals(8,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(6, 0), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(6, 0), seats));
             assertEquals(8,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(6, 7), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(6, 7), seats));
             assertEquals(4,
-                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seatGrid.getSeat(8, 6), seatGrid));
+                    TicketServiceImpl.getNumberOfAdjacentAvailableSeats(seats.getSeat(8, 6), seats));
         } finally {
             reset();
         }
@@ -222,7 +224,7 @@ public class TicketServiceImplTest {
     }
 
     private List<Seat> testGetBestAdjacentSeats(int numSeats) throws NoSeatsAvailableException {
-        List<Seat> heldSeats = TicketServiceImpl.getBestAdjacentSeats(numSeats, bestAvailableSeats, seatGrid);
+        List<Seat> heldSeats = TicketServiceImpl.getBestAdjacentSeats(numSeats, bestAvailableSeats, seats);
         assertAdjacentAndHeld(heldSeats);
         assertDisjoint(heldSeats, bestAvailableSeats);
         return heldSeats;
@@ -232,8 +234,7 @@ public class TicketServiceImplTest {
     public void testExpiration() {
         initialize(10, 20);
         try {
-            TicketServiceImpl tsi = new TicketServiceImpl(new Venue(10, 20, 7));
-
+            TicketServiceImpl tsi = new TicketServiceImpl(venue);
             List<Seat> heldSeats;
             try {
                 heldSeats = testGetBestAdjacentSeats(7);
@@ -243,9 +244,9 @@ public class TicketServiceImplTest {
             SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
             assertFalse(seatHold.isExpired());
             assertEquals(7, seatHold.getHeldSeats().size());
-            tsi.setExpirationTimeout(seatHold, 1 * 1000);
+            tsi.setExpirationTimeout(seatHold, 100);
             try {
-                Thread.sleep(2 * 1000);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -256,12 +257,108 @@ public class TicketServiceImplTest {
         }
     }
 
+    @Test
+    public void testGetSeatHold() {
+        initialize(10, 20);
+        try {
+            final String customerEmail = "ronald.hughes@gmail.com";
+            TicketServiceImpl tsi = new TicketServiceImpl(venue);
+            SeatHold seatHold1 = tsi.findAndHoldSeats(7, customerEmail);
+            SeatHold seatHold2 = tsi.getSeatHold(seatHold1.getSeatHoldId());
+            assertEquals(seatHold1.getSeatHoldId(), seatHold2.getSeatHoldId());
+        } finally {
+            reset();
+        }
+    }
+
+    @Test
+    public void testGetReservation() {
+        initialize(10, 20);
+        try {
+            final String customerEmail = "ronald.hughes@gmail.com";
+            TicketServiceImpl tsi = new TicketServiceImpl(venue);
+            SeatHold seatHold = tsi.findAndHoldSeats(7, customerEmail);
+            String reservationId;
+            reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+            Reservation reservation = tsi.getReservation(reservationId);
+            assertEquals(reservationId, reservation.getReservationId());
+        } finally {
+            reset();
+        }
+    }
+
+    @Test
+    public void testReserveSeats() {
+        initialize(10, 20);
+        try {
+            final String customerEmail = "ronald.hughes@gmail.com";
+            TicketServiceImpl tsi = new TicketServiceImpl(venue);
+            SeatHold seatHold = tsi.findAndHoldSeats(7, customerEmail);
+            String reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+            Reservation reservation = tsi.getReservation(reservationId);
+            assertEquals(reservationId, reservation.getReservationId());
+
+            seatHold = tsi.findAndHoldSeats(7, customerEmail);
+            tsi.expire(seatHold);
+            reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+            assertNull(reservationId);
+        } finally {
+            reset();
+        }
+    }
+
+    @Test
+    public void testFindAndHoldSeats() {
+        initialize(10, 20);
+        try {
+            final String customerEmail = "ronald.hughes@gmail.com";
+            TicketServiceImpl tsi = new TicketServiceImpl(venue);
+            SeatHold seatHold1 = tsi.findAndHoldSeats(20, customerEmail);
+            SeatHold seatHold2 = tsi.getSeatHold(seatHold1.getSeatHoldId());
+            assertEquals(seatHold1.getSeatHoldId(), seatHold2.getSeatHoldId());
+
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNotNull(tsi.findAndHoldSeats(20, customerEmail));
+            assertNull(tsi.findAndHoldSeats(20, customerEmail));   // no more seats available
+        } finally {
+            reset();
+        }
+    }
+
+    @Test
+    public void testNumSeatsAvailable() {
+        initialize(10, 20);
+        try {
+            final String customerEmail = "ronald.hughes@gmail.com";
+            TicketServiceImpl tsi = new TicketServiceImpl(venue);
+            tsi.findAndHoldSeats(7, customerEmail);
+            int numSeatsAvailable = tsi.numSeatsAvailable();
+            assertEquals(193, numSeatsAvailable);
+        } finally {
+            reset();
+        }
+    }
+
+    @Test
+    public void testConstructor() {
+        Venue venue = new Venue(10, 20, 7);
+        TicketServiceImpl tsi = new TicketServiceImpl(venue);
+        assertNotNull(tsi);
+    }
+
     private void assertAdjacentAndHeld(List<Seat> heldSeats) {
         List<Seat> seats = new LinkedList<>(heldSeats);   // don't change the passed-in heldSeats list; make a copy
         seats.sort(Comparator.comparingInt(Seat::getSeatNumInRow));
         int nextSeatNumInRow = seats.get(0).getSeatNumInRow();
         for (Seat seat : seats) {
-            assertTrue(seatGrid.isHeld(seat.getRowNum(), seat.getSeatNumInRow()));
+            assertFalse(this.seats.isAvailable(seat.getRowNum(), seat.getSeatNumInRow()));
             assertEquals(nextSeatNumInRow, seat.getSeatNumInRow());
             nextSeatNumInRow += 1;
         }

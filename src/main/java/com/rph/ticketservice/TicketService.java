@@ -26,6 +26,6 @@ public interface TicketService {
      *                      seat hold is assigned
      * @return a reservation confirmation code
      */
-    String reserveSeats(int seatHoldId, String customerEmail) throws HoldExpiredException;
+    String reserveSeats(int seatHoldId, String customerEmail);
 }
 
