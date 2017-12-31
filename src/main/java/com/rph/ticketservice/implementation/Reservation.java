@@ -1,4 +1,4 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 /**
  * A {@code Reservation} contains the information about a reservation.
@@ -18,7 +18,7 @@ public class Reservation {
      * @param seatHold the setHold
      * @param reservationId the reservationId
      */
-    public Reservation(SeatHold seatHold, String reservationId) {
+    Reservation(SeatHold seatHold, String reservationId) {
         this.seatHold = seatHold;
         this.reservationId = reservationId;
     }

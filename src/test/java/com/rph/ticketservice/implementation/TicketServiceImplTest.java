@@ -1,4 +1,4 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 import org.junit.Test;
 
@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static com.rph.ticketservice.VenueTest.buildAndValidateVenue;
+import static com.rph.ticketservice.implementation.VenueTest.buildAndValidateVenue;
 import static org.junit.Assert.*;
 
 public class TicketServiceImplTest {

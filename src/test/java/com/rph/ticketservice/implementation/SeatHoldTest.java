@@ -1,11 +1,13 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.implementation.Seat;
+import com.rph.ticketservice.implementation.SeatHold;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.rph.ticketservice.SeatHold.isValidEmailAddress;
+import static com.rph.ticketservice.implementation.SeatHold.isValidEmailAddress;
 import static org.junit.Assert.*;
 
 public class SeatHoldTest {

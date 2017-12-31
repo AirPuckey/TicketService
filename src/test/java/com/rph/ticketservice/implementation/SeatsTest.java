@@ -1,9 +1,9 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.implementation.Seat;
+import com.rph.ticketservice.implementation.Seats;
+import com.rph.ticketservice.implementation.Venue;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.*;
 

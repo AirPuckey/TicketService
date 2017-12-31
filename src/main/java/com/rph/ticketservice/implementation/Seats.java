@@ -1,4 +1,4 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 
 /**
@@ -91,7 +91,7 @@ public class Seats {
      * @param seatNumInRow the seat number in the row
      * @param available the seat availability (true implies available)
      */
-    public void setAvailability(int rowNum, int seatNumInRow, boolean available) {
+    void setAvailability(int rowNum, int seatNumInRow, boolean available) {
         seatIsAvailable[rowNum][seatNumInRow] = available;
     }
 }

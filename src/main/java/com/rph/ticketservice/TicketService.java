@@ -1,5 +1,7 @@
 package com.rph.ticketservice;
 
+import com.rph.ticketservice.implementation.SeatHold;
+
 public interface TicketService {
     /**
      * The number of seats in the venue that are neither held nor reserved

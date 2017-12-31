@@ -1,4 +1,4 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class SeatHold {
      * @param customerEmail the customer's email address
      * @param seats the held seats
      */
-    public SeatHold(int seatHoldId, String customerEmail, List<Seat> seats) {
+    SeatHold(int seatHoldId, String customerEmail, List<Seat> seats) {
         if (!isValidEmailAddress(customerEmail)) {
             throw new IllegalArgumentException("invalid email address: " + customerEmail);
         }
@@ -105,7 +105,7 @@ public class SeatHold {
      *
      * @return true if the seatHold is now EXPIRED, otherwise false
      */
-    public boolean expire() {
+    boolean expire() {
         if (state == State.HELD) {
             state = State.EXPIRED;
         }
@@ -119,7 +119,7 @@ public class SeatHold {
      *
      * @return true if the seatHold is now RESERVED, otherwise false
      */
-    public boolean reserve() {
+    boolean reserve() {
         if (state == State.HELD) {
             state = State.RESERVED;
         }
@@ -132,6 +132,7 @@ public class SeatHold {
      * @param customerEmail the email address
      * @return true if the email address is valid, otherwise false
      */
+    @VisibleForTesting
     static boolean isValidEmailAddress(String customerEmail) {
         if (customerEmail == null) {
             return false;

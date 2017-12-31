@@ -1,4 +1,6 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
+
+import com.rph.ticketservice.TicketService;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -105,12 +107,10 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    @VisibleForTesting
     SeatHold getSeatHold(int seatHoldId) {
         return seatHolds.get(seatHoldId);
     }
 
-    @VisibleForTesting
     void expire(SeatHold seatHold) {
         synchronized (synchroLock) {
             if (seatHold.expire()) {
@@ -200,7 +200,7 @@ public class TicketServiceImpl implements TicketService {
      * @param seats the grid of all seats
      * @return a list containing the newly held seats
      *
-     * @see com.rph.ticketservice.Venue for the way in which seat bestness is initialized.
+     * @see Venue for the way in which seat bestness is initialized.
      */
     @VisibleForTesting
     static List<Seat> extractAdjacentSeats(int numSeatsNeeded, Seat initialSeat, List<Seat> bestAvailableSeats,
@@ -293,7 +293,6 @@ public class TicketServiceImpl implements TicketService {
      * @param bestAvailableSeats the destination list of seats, ordered by bestness
      * @param seats the grid of all seats
      */
-    @VisibleForTesting
     static void makeSeatsAvailable(List<Seat> heldSeats, List<Seat> bestAvailableSeats, Seats seats) {
         heldSeats.sort(Comparator.comparingInt(Seat::getBestness));
         int availIndex = 0;

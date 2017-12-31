@@ -1,4 +1,4 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 /**
  * A {@code Seat} is an immutable object containing the static (unchanging) information
@@ -23,7 +23,7 @@ public class Seat {
      * @param seatNumInRow the seat number within the row
      * @param bestness the bestness value
      */
-    public Seat(int rowNum, int seatNumInRow, int bestness) {
+    Seat(int rowNum, int seatNumInRow, int bestness) {
         this.rowNum = rowNum;
         this.seatNumInRow = seatNumInRow;
         this.bestness = bestness;

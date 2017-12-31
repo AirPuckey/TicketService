@@ -1,4 +1,4 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +15,7 @@ import java.util.stream.Stream;
  * bestness value). Those same seats are also contained in a rectangular grid, allowing
  * them to be obtained by seat coordinate.
  */
-public class Venue {
+class Venue {
 
     private static final int MAXIMUM_NUMBER_OF_ROWS = 1000;   // for sanity check
 
@@ -41,7 +41,7 @@ public class Venue {
      * @param numSeatsPerRow number of seats in each row
      * @param bestRowNum the best row number of the venue
      */
-    public Venue(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
+    Venue(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
         if (numRows <= 0 || numRows >= MAXIMUM_NUMBER_OF_ROWS) {
             throw new IllegalArgumentException("bad rows: " + numRows);
         }
@@ -62,7 +62,7 @@ public class Venue {
      *
      * @return number of seats in the venue
      */
-    public int getNumberOfSeats() {
+    int getNumberOfSeats() {
         return bestSeats.size();
     }
 
@@ -71,7 +71,7 @@ public class Venue {
      *
      * @return number of rows in the venue
      */
-    public int getNumRows() {
+    int getNumRows() {
         return numRows;
     }
 
@@ -80,7 +80,7 @@ public class Venue {
      *
      * @return number of seats in each row
      */
-    public int getNumSeatsPerRow() {
+    int getNumSeatsPerRow() {
         return numSeatsPerRow;
     }
 
@@ -89,7 +89,7 @@ public class Venue {
      *
      * @return unmodifiable list of seats, ordered by decreasing bestness
      */
-    public List<Seat> getBestSeats() {
+    List<Seat> getBestSeats() {
         return bestSeats;
     }
 
@@ -101,7 +101,7 @@ public class Venue {
      * @param seatNumInRow the seat number in the row
      * @return the seat at the specified coordinates
      */
-    public Seat getSeat(int rowNum, int seatNumInRow) {
+    Seat getSeat(int rowNum, int seatNumInRow) {
         return seatGrid[rowNum][seatNumInRow];
     }
 
@@ -191,6 +191,7 @@ public class Venue {
         }
     }
 
+    @VisibleForTesting
     static Seat[][] buildSeatGrid(int numRows, int numSeatsPerRow, List<Seat> bestSeats) {
         if (numRows * numSeatsPerRow != bestSeats.size()) {
             throw new IllegalArgumentException("bad bestSeats size: " + bestSeats.size());

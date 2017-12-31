@@ -1,10 +1,10 @@
-package com.rph.ticketservice;
+package com.rph.ticketservice.implementation;
 
 /**
  * A NoSeatsAvailableException is thrown when a request for a seatHold is made
  * but there are not sufficient adjacent seats available.
  */
-public class NoSeatsAvailableException extends Exception {
+class NoSeatsAvailableException extends Exception {
 
     public NoSeatsAvailableException() {
         super();
