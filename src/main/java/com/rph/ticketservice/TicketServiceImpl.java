@@ -12,13 +12,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+/**
+ * An implementation of {@code TicketService}.
+ */
 public class TicketServiceImpl implements TicketService {
 
     private static final long EXPIRE_SECONDS = 5 * 60;   // five minutes
 
     private final Object synchroLock = new Object();
-
-    private final Venue venue;
 
     private final List<Seat> bestAvailableSeats;
 
@@ -32,7 +33,6 @@ public class TicketServiceImpl implements TicketService {
 
 
     public TicketServiceImpl(Venue venue) {
-        this.venue = venue;
         this.bestAvailableSeats = new ArrayList<>(venue.getBestSeats());
         this.seats = new Seats(venue);
     }
@@ -83,20 +83,19 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public String reserveSeats(int seatHoldId, String customerEmail) {
         synchronized (synchroLock) {
-            try {
-                SeatHold seatHold = getSeatHold(seatHoldId);
-                String reservationId = Integer.toString(seatHold.getSeatHoldId());
-                if (seatHold.isReserved()) {
-                    return reservationId;
-                }
-                seatHold.reserveSeats();   // may throw HoldExpiredException
-                Reservation reservation = new Reservation(seatHold, reservationId);
-                reservations.put(reservationId, reservation);
-                seatHolds.remove(seatHoldId);
+            SeatHold seatHold = getSeatHold(seatHoldId);
+            String reservationId = Integer.toString(seatHold.getSeatHoldId());
+            if (seatHold.isReserved()) {
                 return reservationId;
-            } catch (HoldExpiredException e) {
+            }
+            if (seatHold.isExpired()) {
                 return null;
             }
+            seatHold.reserve();
+            Reservation reservation = new Reservation(seatHold, reservationId);
+            reservations.put(reservationId, reservation);
+            seatHolds.remove(seatHoldId);
+            return reservationId;
         }
     }
 
@@ -204,7 +203,7 @@ public class TicketServiceImpl implements TicketService {
      * @see com.rph.ticketservice.Venue for the way in which seat bestness is initialized.
      */
     @VisibleForTesting
-    static List<Seat> extractAdjacentSeats(int numSeatsNeeded, Seat initialSeat,List<Seat> bestAvailableSeats,
+    static List<Seat> extractAdjacentSeats(int numSeatsNeeded, Seat initialSeat, List<Seat> bestAvailableSeats,
                                            Seats seats) {
         final int rowNum = initialSeat.getRowNum();
         final int initialSeatNumInRow = initialSeat.getSeatNumInRow();

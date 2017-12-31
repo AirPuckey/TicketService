@@ -34,32 +34,4 @@ public class SeatsTest {
         seatsAvailabilityGrid[5][15] = true;
         assertTrue(seatsAvailabilityGrid[5][15]);
     }
-
-    @Test
-    public void testBuildSeatGrid() {
-        List<Seat> bestSeats = new Venue(10, 20, 4).getBestSeats();
-        Seat[][] seatGrid = Seats.buildSeatGrid(10, 20, bestSeats);
-        Seat seat = seatGrid[5][15];
-        assertEquals(5, seat.getRowNum());
-        assertEquals(15, seat.getSeatNumInRow());
-
-        List<Seat> bestAvailableSeats = new ArrayList<>(bestSeats);   // writeable copy
-        seat = bestAvailableSeats.remove(0);
-        try {
-            Seats.buildSeatGrid(10, 20, bestAvailableSeats);
-            fail("Exception expected!");
-        } catch (IllegalArgumentException e) {
-            // expected exception
-        }
-
-        bestAvailableSeats.remove(0);
-        bestAvailableSeats.add(0, seat);
-        bestAvailableSeats.add(0, seat);
-        try {
-            Seats.buildSeatGrid(10, 20, bestAvailableSeats);
-            fail("Exception expected!");
-        } catch (IllegalArgumentException e) {
-            // expected exception
-        }
-    }
 }

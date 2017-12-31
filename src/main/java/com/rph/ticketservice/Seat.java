@@ -1,33 +1,72 @@
 package com.rph.ticketservice;
 
+/**
+ * A {@code Seat} is an immutable object containing the static (unchanging) information
+ * about a seat.
+ */
 public class Seat {
 
-    private int rowNum;
+    /** The row number of the seat. */
+    private final int rowNum;
 
-    private int seatNumInRow;
+    /** The seat number within the row. */
+    private final int seatNumInRow;
 
-    private int bestness;   // low numbers are better seats
+    /* The bestness value for the seat. A lower number implies a better seat. */
+    private final int bestness;   // between zero (inclusive) and the total number of seats in the venue (exclusive).
 
+
+    /**
+     * Constructs a new Seat.
+     *
+     * @param rowNum the row number
+     * @param seatNumInRow the seat number within the row
+     * @param bestness the bestness value
+     */
     public Seat(int rowNum, int seatNumInRow, int bestness) {
         this.rowNum = rowNum;
         this.seatNumInRow = seatNumInRow;
         this.bestness = bestness;
     }
 
+    /**
+     * The row number of this seat.
+     *
+     * @return the row number
+     */
     public int getRowNum() {
         return rowNum;
     }
 
+    /**
+     * The seat number within the row.
+     *
+     * @return the seat number within the row
+     */
     public int getSeatNumInRow() {
         return seatNumInRow;
     }
 
+    /**
+     * The bestness value (a lower number implies a better seat).
+     *
+     * @return the bestness value
+     */
     public int getBestness() {
         return bestness;
     }
 
+    /**
+     * See {@code Object.equals()} method, which this method overrides.
+     *
+     * @param obj the object to compare this one to.
+     * @return true if the object is equivalent to this seat, otherwise false
+     */
     @Override
     public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
         if (obj == this) {
             return true;
         }
@@ -40,13 +79,23 @@ public class Seat {
                 && this.getBestness() == that.getBestness();
     }
 
+    /**
+     * The hashcode for this seat. Consistent with equals(). See {@code Object.hashcode()} method.
+     *
+     * @return the hashcode for this seat
+     */
     @Override
     public int hashCode() {
-        return (rowNum << 20) + (seatNumInRow << 10) + bestness;
+        return (getRowNum() << 20) + (getSeatNumInRow() << 10) + getBestness();   // could be better
     }
 
+    /**
+     * A string representation of this seat. See {@code Object.toString()} method.
+     *
+     * @return a string representation of this seat.
+     */
     @Override
     public String toString() {
-        return rowNum + " x " + seatNumInRow;
+        return getRowNum() + "x" + getSeatNumInRow() + ":" + getBestness();
     }
 }

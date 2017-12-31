@@ -11,8 +11,9 @@ public class SeatTest {
     @Test
     public void testAll() {
         Seat seat = new Seat(5, 15, 77);
-        assertEquals("5 x 15", seat.toString());
+        assertEquals("5x15:77", seat.toString());
         assertEquals(5258317, seat.hashCode());
+        assertFalse(seat.equals(null));
         assertTrue(seat.equals(seat));
         assertFalse(seat.equals(new Object()));
         Seat equalSeat = new Seat(5, 15, 77);

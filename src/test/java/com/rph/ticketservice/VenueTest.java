@@ -2,12 +2,41 @@ package com.rph.ticketservice;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
 
 
 public class VenueTest {
+
+    @Test
+    public void testBuildSeatGrid() {
+        List<Seat> bestSeats = new Venue(10, 20, 4).getBestSeats();
+        Seat[][] seatGrid = Venue.buildSeatGrid(10, 20, bestSeats);
+        Seat seat = seatGrid[5][15];
+        assertEquals(5, seat.getRowNum());
+        assertEquals(15, seat.getSeatNumInRow());
+
+        List<Seat> bestAvailableSeats = new ArrayList<>(bestSeats);   // writeable copy
+        seat = bestAvailableSeats.remove(0);
+        try {
+            Venue.buildSeatGrid(10, 20, bestAvailableSeats);
+            fail("Exception expected!");
+        } catch (IllegalArgumentException e) {
+            // expected exception
+        }
+
+        bestAvailableSeats.remove(0);
+        bestAvailableSeats.add(0, seat);
+        bestAvailableSeats.add(0, seat);
+        try {
+            Venue.buildSeatGrid(10, 20, bestAvailableSeats);
+            fail("Exception expected!");
+        } catch (IllegalArgumentException e) {
+            // expected exception
+        }
+    }
 
     @Test
     public void testBuildBestRowSeries() {
@@ -75,10 +104,13 @@ public class VenueTest {
     @Test
     public void testSettersAndGetters() {
         Venue venue = new Venue(10, 20, 4);
-        assertEquals(10, venue.getNumberOfRows());
-        assertEquals(20, venue.getNumberOfSeatsPerRow());
+        assertEquals(10, venue.getNumRows());
+        assertEquals(20, venue.getNumSeatsPerRow());
         assertEquals(10 * 20, venue.getNumberOfSeats());
         assertBestAvailableSeatsListIsValid(10, 20, venue.getBestSeats());
+        Seat seat = venue.getSeat(5, 7);
+        assertEquals(5, seat.getRowNum());
+        assertEquals(7, seat.getSeatNumInRow());
     }
 
     public static Venue buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {

@@ -9,15 +9,17 @@ import java.util.stream.Stream;
 
 
 /**
- * A {@code Venue} is an immutable class encapsulating the static (unchanging) state of the venue.
+ * A {@code Venue} is an immutable class encapsulating the static state of the venue.
  * It contains an unmodifiable list of all the seats ordered by decreasing bestness
- * (earlier seats in the list are better than those later in the list, and have a lower bestness value).
+ * (earlier seats in the list are better than those later in the list, and have a lower
+ * bestness value). Those same seats are also contained in a rectangular grid, allowing
+ * them to be obtained by seat coordinate.
  */
 public class Venue {
 
-    private static final int MAXIMUM_NUMBER_OF_ROWS = 1000;
+    private static final int MAXIMUM_NUMBER_OF_ROWS = 1000;   // for sanity check
 
-    private static final int MAXIMUM_NUMBER_OF_SEATS_PER_ROW = 500;
+    private static final int MAXIMUM_NUMBER_OF_SEATS_PER_ROW = 500;   // for sanity check
 
     /** Number of rows of seats at this venue. */
     private final int numRows;
@@ -27,6 +29,9 @@ public class Venue {
 
     /** All the seats, ordered by decreasing bestness (lower index: better seat). */
     private final List<Seat> bestSeats;   // unmodifiable
+
+    /** The seats in a rectangular grid. */
+    private final Seat[][] seatGrid;
 
 
     /**
@@ -46,27 +51,58 @@ public class Venue {
         if (bestRowNum < 0 || bestRowNum >= numRows) {
             throw new IllegalArgumentException("bad bestRow: " + bestRowNum);
         }
-
-        List<Seat> bestSeats = Collections.unmodifiableList(buildBestSeatsList(numRows, numSeatsPerRow, bestRowNum));
+        this.bestSeats = Collections.unmodifiableList(buildBestSeatsList(numRows, numSeatsPerRow, bestRowNum));
+        this.seatGrid = buildSeatGrid(numRows, numSeatsPerRow, bestSeats);
         this.numRows = numRows;
         this.numSeatsPerRow = numSeatsPerRow;
-        this.bestSeats = bestSeats;
     }
 
+    /**
+     * Number of seats in the venue.
+     *
+     * @return number of seats in the venue
+     */
     public int getNumberOfSeats() {
         return bestSeats.size();
     }
 
-    public int getNumberOfRows() {
+    /**
+     * Number of rows in the venue.
+     *
+     * @return number of rows in the venue
+     */
+    public int getNumRows() {
         return numRows;
     }
 
-    public int getNumberOfSeatsPerRow() {
+    /**
+     * Number of seats in each row.
+     *
+     * @return number of seats in each row
+     */
+    public int getNumSeatsPerRow() {
         return numSeatsPerRow;
     }
 
+    /**
+     * The list of seats, ordered by bestness. This list is unmodifiable.
+     *
+     * @return unmodifiable list of seats, ordered by decreasing bestness
+     */
     public List<Seat> getBestSeats() {
         return bestSeats;
+    }
+
+    /**
+     * Returns the seat corresponding to the specified row number and seat number in row.
+     * Note that each seat returned is immutable.
+     *
+     * @param rowNum the row containing the seat
+     * @param seatNumInRow the seat number in the row
+     * @return the seat at the specified coordinates
+     */
+    public Seat getSeat(int rowNum, int seatNumInRow) {
+        return seatGrid[rowNum][seatNumInRow];
     }
 
     /**
@@ -89,8 +125,9 @@ public class Venue {
         List<Seat> bestSeats = new ArrayList<>(numSeats);
         List<List<Integer>> bestSeatNumbersPerRow = new ArrayList<>();
         for (int i = 0; i < numRows; i++) {
-            // Seat numbers in row ordered by bestness: start in the middle, and alternate to the right and left,
-            // gradually moving out to the right and left edges of the venue.
+            // Seat numbers in each row ordered by bestness: start in the middle,
+            // and alternate to the right and left, gradually moving out to the
+            // right and left edges of the venue.
             bestSeatNumbersPerRow.add(
                     Stream.iterate(0, n -> (n <= 0) ? (-n + 1) : (-n))   // 0, +1, -1, +2, -2, +3, -3, ...
                     .map(n -> bestSeatNumInRow + n)   // bSNIR, bSNIR+1, bSNIR-1, ...
@@ -122,9 +159,8 @@ public class Venue {
      * 0, +1, -1, +2, -2, +3, -3,
      * ...
      *
-     * Then add bestRowNum to each element in the series,
-     * and throw out any resulting row number less than zero or greater than or equal to numRows.
-     * Limit the length of the final series to len.
+     * Add bestRowNum to each element in the series, and throw out any resulting row number
+     * less than zero or greater than or equal to numRows. Limit the length of the final series to len.
      *
      * @param numRows number of rows in the venue
      * @param bestRowNum the best row number in the venue
@@ -153,5 +189,24 @@ public class Venue {
             // The rowNumSeries array is full. Return it.
             return rowNumSeries;
         }
+    }
+
+    static Seat[][] buildSeatGrid(int numRows, int numSeatsPerRow, List<Seat> bestSeats) {
+        if (numRows * numSeatsPerRow != bestSeats.size()) {
+            throw new IllegalArgumentException("bad bestSeats size: " + bestSeats.size());
+        }
+        Seat[][] seatGrid = new Seat[numRows][];
+        for (int rowNum = 0; rowNum < numRows; rowNum++) {
+            seatGrid[rowNum] = new Seat[numSeatsPerRow];
+        }
+        for (Seat seat: bestSeats) {
+            int rowNum = seat.getRowNum();
+            int seatNumInRow = seat.getSeatNumInRow();
+            if (seatGrid[rowNum][seatNumInRow] != null) {
+                throw new IllegalArgumentException("bestSeats contains duplicate seats!");
+            }
+            seatGrid[rowNum][seatNumInRow] = seat;
+        }
+        return seatGrid;
     }
 }

@@ -26,13 +26,6 @@ public class SeatHoldTest {
         assertTrue(seatHold.isHeld());
         assertFalse(seatHold.isReserved());
         assertEquals(1, heldSeats.size());
-        try {
-            seatHold.reserveSeats();
-        } catch (HoldExpiredException e) {
-            throw new RuntimeException(e);
-        }
-        assertTrue(seatHold.isReserved());
-        assertFalse(seatHold.isHeld());
         assertEquals(1, heldSeats.size());
 
         seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
@@ -40,14 +33,9 @@ public class SeatHoldTest {
         assertEquals(1, heldSeats.size());
         seatHold.expire();
         assertEquals(1, heldSeats.size());
-        try {
-            seatHold.reserveSeats();
-            fail("Exception expected!");
-        } catch (HoldExpiredException e) {
-            // expected exception
-        }
-        assertTrue(seatHold.isExpired());
         assertFalse(seatHold.isHeld());
+        assertFalse(seatHold.reserve());
+        assertTrue(seatHold.isExpired());
         assertEquals(1, heldSeats.size());
     }
 

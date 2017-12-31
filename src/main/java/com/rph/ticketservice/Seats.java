@@ -1,42 +1,38 @@
 package com.rph.ticketservice;
 
-import java.util.List;
 
+/**
+ * This class contains seat information (static and dynamic).
+ */
 public class Seats {
 
-    private final Seat seatGrid[][];
+    /** The venue containing the seats. */
+    private final Venue venue;
 
-    private boolean[][] seatAvailabilityGrid;
+    /** A rectangular grid containing the availability of each seat. */
+    private boolean[][] seatIsAvailable;
 
 
-    public Seats(Venue venue) {
-        this(venue.getNumberOfRows(), venue.getNumberOfSeatsPerRow(), venue.getBestSeats());
+    /**
+     * Constructs a new {@code Seats} instance.
+     *
+     * @param venue the associated venue
+     */
+    Seats(Venue venue) {
+        this.venue = venue;
+        this.seatIsAvailable = buildSeatAvailabilityGrid(venue.getNumRows(), venue.getNumSeatsPerRow());
     }
 
-    public Seats(int numRows, int numSeatsPerRow, List<Seat> bestSeats) {
-        seatGrid = buildSeatGrid(numRows, numSeatsPerRow, bestSeats);
-        seatAvailabilityGrid = buildSeatAvailabilityGrid(numRows, numSeatsPerRow);
-    }
-
-    static Seat[][] buildSeatGrid(int numRows, int numSeatsPerRow, List<Seat> bestSeats) {
-        if (numRows * numSeatsPerRow != bestSeats.size()) {
-            throw new IllegalArgumentException("bad bestSeats size: " + bestSeats.size());
-        }
-        Seat[][] seatGrid = new Seat[numRows][];
-        for (int rowNum = 0; rowNum < numRows; rowNum++) {
-            seatGrid[rowNum] = new Seat[numSeatsPerRow];
-        }
-        for (Seat seat: bestSeats) {
-            int rowNum = seat.getRowNum();
-            int seatNumInRow = seat.getSeatNumInRow();
-            if (seatGrid[rowNum][seatNumInRow] != null) {
-                throw new IllegalArgumentException("bestSeats contains duplicate seats!");
-            }
-            seatGrid[rowNum][seatNumInRow] = seat;
-        }
-        return seatGrid;
-    }
-
+    /**
+     * Builds a rectangular array of booleans. Each element indicates whether the seat
+     * at the corresponding coordinates is available (true) or not (false). Initially
+     * all values are true (all seats are available).
+     *
+     * @param numRows number of rows in the grid
+     * @param numSeatsPerRow number of columns in the grid
+     * @return the two dimensional boolean array
+     */
+    @VisibleForTesting
     static boolean[][] buildSeatAvailabilityGrid(int numRows, int numSeatsPerRow) {
         boolean[][] seatAvailableGrid = new boolean[numRows][];
         for (int rowNum = 0; rowNum < numRows; rowNum++) {
@@ -48,23 +44,54 @@ public class Seats {
         return seatAvailableGrid;
     }
 
+    /**
+     * Number of rows.
+     *
+     * @return number of rows
+     */
     public int getNumRows() {
-        return seatGrid.length;
+        return venue.getNumRows();
     }
 
+    /**
+     * Number of seats per row.
+     *
+     * @return number of seats per row
+     */
     public int getNumSeatsPerRow() {
-        return seatGrid[0].length;
+        return venue.getNumSeatsPerRow();
     }
 
+    /**
+     * Returns the seat at the specified coordinates.
+     *
+     * @param rowNum the row number
+     * @param seatNumInRow the seat number in the row
+     * @return the seat
+     */
     public Seat getSeat(int rowNum, int seatNumInRow) {
-        return seatGrid[rowNum][seatNumInRow];
+        return venue.getSeat(rowNum, seatNumInRow);
     }
 
+    /**
+     * Returns true if the specified seat is available, else false.
+     *
+     * @param rowNum the row number
+     * @param seatNumInRow the seat number in the row
+     * @return the seat availability
+     */
     public boolean isAvailable(int rowNum, int seatNumInRow) {
-        return seatAvailabilityGrid[rowNum][seatNumInRow];
+        return seatIsAvailable[rowNum][seatNumInRow];
     }
 
+    /**
+     * Sets the availability of the specified seat.
+     *
+     * @param rowNum the row number
+     * @param seatNumInRow the seat number in the row
+     * @param available the seat availability (true implies available)
+     */
     public void setAvailability(int rowNum, int seatNumInRow, boolean available) {
-        seatAvailabilityGrid[rowNum][seatNumInRow] = available;
+        seatIsAvailable[rowNum][seatNumInRow] = available;
     }
 }
