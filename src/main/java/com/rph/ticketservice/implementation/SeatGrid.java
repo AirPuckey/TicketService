@@ -4,7 +4,7 @@ package com.rph.ticketservice.implementation;
 /**
  * This class contains seat information (static and dynamic).
  */
-public class Seats {
+public class SeatGrid {
 
     /** The venue containing the seats. */
     private final Venue venue;
@@ -18,7 +18,7 @@ public class Seats {
      *
      * @param venue the associated venue
      */
-    Seats(Venue venue) {
+    SeatGrid(Venue venue) {
         this.venue = venue;
         this.seatIsAvailable = buildSeatAvailabilityGrid(venue.getNumRows(), venue.getNumSeatsPerRow());
     }

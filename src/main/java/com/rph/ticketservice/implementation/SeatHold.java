@@ -140,4 +140,19 @@ public class SeatHold {
         // this is overly simplistic
         return customerEmail.matches("^[.a-zA-Z0-9]+@[a-zA-Z0-9]+(.[a-zA-Z]{2,})$");
     }
+
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder(50 + (30 * getHeldSeats().size()));
+        buf.append(state.toString());
+        buf.append(" ");
+        buf.append(getSeatHoldId());
+        buf.append(": ");
+        buf.append(getHeldSeats().size());
+        for (Seat seat : getHeldSeats()) {
+            buf.append(" ");
+            buf.append(seat.toString());
+        }
+        return buf.toString();
+    }
 }

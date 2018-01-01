@@ -86,7 +86,7 @@ public class Seat {
      */
     @Override
     public int hashCode() {
-        return (getRowNum() << 20) + (getSeatNumInRow() << 10) + getBestness();   // could be better
+        return ((getRowNum() * 31) << 17) + ((getSeatNumInRow() * 31) << 9) + getBestness();
     }
 
     /**
@@ -96,6 +96,6 @@ public class Seat {
      */
     @Override
     public String toString() {
-        return getRowNum() + "x" + getSeatNumInRow() + ":" + getBestness();
+        return (getRowNum() + 1) + "x" + (getSeatNumInRow() + 1) + ":" + getBestness();
     }
 }

@@ -1,6 +1,5 @@
 package com.rph.ticketservice.implementation;
 
-import com.rph.ticketservice.implementation.NoSeatsAvailableException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

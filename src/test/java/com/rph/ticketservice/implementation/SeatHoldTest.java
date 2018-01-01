@@ -13,6 +13,14 @@ import static org.junit.Assert.*;
 public class SeatHoldTest {
 
     @Test
+    public void testToString() {
+        List<Seat> heldSeats = new LinkedList<>();
+        heldSeats.add(new Seat(4, 9, 99));
+        SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+        assertEquals("HELD 17: 1 5x10:99", seatHold.toString());
+    }
+
+    @Test
     public void testIsValidEmailAddress() {
         assertFalse(isValidEmailAddress(null));
         assertFalse(isValidEmailAddress(""));

@@ -14,7 +14,7 @@ public class VenueTest {
 
     @Test
     public void testBuildSeatGrid() {
-        List<Seat> bestSeats = new Venue(10, 20, 4).getBestSeats();
+        List<Seat> bestSeats = new Venue(10, 20, 5).getBestSeats();
         Seat[][] seatGrid = Venue.buildSeatGrid(10, 20, bestSeats);
         Seat seat = seatGrid[5][15];
         assertEquals(5, seat.getRowNum());
@@ -105,7 +105,7 @@ public class VenueTest {
 
     @Test
     public void testSettersAndGetters() {
-        Venue venue = new Venue(10, 20, 4);
+        Venue venue = new Venue(10, 20, 5);
         assertEquals(10, venue.getNumRows());
         assertEquals(20, venue.getNumSeatsPerRow());
         assertEquals(10 * 20, venue.getNumberOfSeats());
@@ -116,7 +116,7 @@ public class VenueTest {
     }
 
     public static Venue buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {
-        Venue venue = new Venue(numRows, numSeatsPerRow, bestRowNum);
+        Venue venue = new Venue(numRows, numSeatsPerRow, bestRowNum + 1);
         List<Seat> bestSeats = venue.getBestSeats();
         assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestSeats);
         assertEquals(numRows * numSeatsPerRow, bestSeats.size());   // list is full (no missing seats)

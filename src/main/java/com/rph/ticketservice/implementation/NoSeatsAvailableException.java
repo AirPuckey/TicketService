@@ -6,19 +6,19 @@ package com.rph.ticketservice.implementation;
  */
 class NoSeatsAvailableException extends Exception {
 
-    public NoSeatsAvailableException() {
+    NoSeatsAvailableException() {
         super();
     }
 
-    public NoSeatsAvailableException(String message) {
+    NoSeatsAvailableException(String message) {
         super(message);
     }
 
-    public NoSeatsAvailableException(String message, Throwable cause) {
+    NoSeatsAvailableException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public NoSeatsAvailableException(Throwable cause) {
+    NoSeatsAvailableException(Throwable cause) {
         super(cause);
     }
 }

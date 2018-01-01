@@ -15,7 +15,7 @@ import java.util.stream.Stream;
  * bestness value). Those same seats are also contained in a rectangular grid, allowing
  * them to be obtained by seat coordinate.
  */
-class Venue {
+public class Venue {
 
     private static final int MAXIMUM_NUMBER_OF_ROWS = 1000;   // for sanity check
 
@@ -39,19 +39,19 @@ class Venue {
      *
      * @param numRows number of rows in the venue
      * @param numSeatsPerRow number of seats in each row
-     * @param bestRowNum the best row number of the venue
+     * @param bestRowNum the best row number of the venue (1 based)
      */
-    Venue(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
+    public Venue(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
         if (numRows <= 0 || numRows >= MAXIMUM_NUMBER_OF_ROWS) {
             throw new IllegalArgumentException("bad rows: " + numRows);
         }
         if (numSeatsPerRow <= 0 || numSeatsPerRow >= MAXIMUM_NUMBER_OF_SEATS_PER_ROW) {
             throw new IllegalArgumentException("bad seatsPerRow: " + numSeatsPerRow);
         }
-        if (bestRowNum < 0 || bestRowNum >= numRows) {
+        if (bestRowNum <= 0 || bestRowNum > numRows) {
             throw new IllegalArgumentException("bad bestRow: " + bestRowNum);
         }
-        this.bestSeats = Collections.unmodifiableList(buildBestSeatsList(numRows, numSeatsPerRow, bestRowNum));
+        this.bestSeats = Collections.unmodifiableList(buildBestSeatsList(numRows, numSeatsPerRow, bestRowNum - 1));
         this.seatGrid = buildSeatGrid(numRows, numSeatsPerRow, bestSeats);
         this.numRows = numRows;
         this.numSeatsPerRow = numSeatsPerRow;
@@ -62,7 +62,7 @@ class Venue {
      *
      * @return number of seats in the venue
      */
-    int getNumberOfSeats() {
+    public int getNumberOfSeats() {
         return bestSeats.size();
     }
 
@@ -71,7 +71,7 @@ class Venue {
      *
      * @return number of rows in the venue
      */
-    int getNumRows() {
+    public int getNumRows() {
         return numRows;
     }
 
@@ -80,7 +80,7 @@ class Venue {
      *
      * @return number of seats in each row
      */
-    int getNumSeatsPerRow() {
+    public int getNumSeatsPerRow() {
         return numSeatsPerRow;
     }
 
@@ -89,7 +89,7 @@ class Venue {
      *
      * @return unmodifiable list of seats, ordered by decreasing bestness
      */
-    List<Seat> getBestSeats() {
+    public List<Seat> getBestSeats() {
         return bestSeats;
     }
 
@@ -101,7 +101,7 @@ class Venue {
      * @param seatNumInRow the seat number in the row
      * @return the seat at the specified coordinates
      */
-    Seat getSeat(int rowNum, int seatNumInRow) {
+    public Seat getSeat(int rowNum, int seatNumInRow) {
         return seatGrid[rowNum][seatNumInRow];
     }
 

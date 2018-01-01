@@ -1,31 +1,28 @@
 package com.rph.ticketservice.implementation;
 
-import com.rph.ticketservice.implementation.Seat;
-import com.rph.ticketservice.implementation.Seats;
-import com.rph.ticketservice.implementation.Venue;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 
-public class SeatsTest {
+public class SeatGridTest {
 
     @Test
     public void testSettersAndGetters() {
-        Seats seats = new Seats(new Venue(10, 20, 4));
-        assertTrue(seats.isAvailable(5, 15));
-        seats.setAvailability(5, 15, false);
-        assertFalse(seats.isAvailable(5, 15));
-        Seat seat = seats.getSeat(5, 15);
+        SeatGrid seatGrid = new SeatGrid(new Venue(10, 20, 5));
+        assertTrue(seatGrid.isAvailable(5, 15));
+        seatGrid.setAvailability(5, 15, false);
+        assertFalse(seatGrid.isAvailable(5, 15));
+        Seat seat = seatGrid.getSeat(5, 15);
         assertEquals(5, seat.getRowNum());
         assertEquals(15, seat.getSeatNumInRow());
-        assertEquals(20, seats.getNumSeatsPerRow());
-        assertEquals(10, seats.getNumRows());
+        assertEquals(20, seatGrid.getNumSeatsPerRow());
+        assertEquals(10, seatGrid.getNumRows());
     }
 
     @Test
     public void testBuildSeatAvailabilityGrid() {
-        boolean[][] seatsAvailabilityGrid = Seats.buildSeatAvailabilityGrid(10, 20);
+        boolean[][] seatsAvailabilityGrid = SeatGrid.buildSeatAvailabilityGrid(10, 20);
         assertEquals(10, seatsAvailabilityGrid.length);
         assertEquals(20, seatsAvailabilityGrid[0].length);
         assertTrue(seatsAvailabilityGrid[5][15]);
