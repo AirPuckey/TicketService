@@ -59,6 +59,7 @@ The interested evaluator should create a directory and cd into it,
 then download the following two repositories:
 
 https://github.com/AirPuckey/TicketService.git
+
 https://github.com/AirPuckey/VenueViewer.git
 
 
