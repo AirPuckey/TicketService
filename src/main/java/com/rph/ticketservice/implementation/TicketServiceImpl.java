@@ -1,6 +1,8 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.SeatHold;
 import com.rph.ticketservice.TicketService;
+import com.rph.ticketservice.Venue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,13 +29,13 @@ public class TicketServiceImpl implements TicketService {
     private final Object synchroLock = new Object();
 
     /** Dynamic list of available seats, ordered by decreasing bestness (increasing bestness number). */
-    private final List<Seat> bestAvailableSeats;
+    private final List<SeatImpl> bestAvailableSeats;
 
     /** Encapsulates a rectangular grid of per-seat info. */
     private SeatGrid seatGrid;
 
     /** Maps a SeatHold ID to a SeatHold instance. */
-    private final Map<Integer, SeatHold> seatHolds = new HashMap<>();
+    private final Map<Integer, SeatHoldImpl> seatHolds = new HashMap<>();
 
     /** Maps a reservation ID to a Reservation instance. */
     private final Map<String, Reservation> reservations = new HashMap<>();
@@ -64,8 +66,9 @@ public class TicketServiceImpl implements TicketService {
      * @param expireMillies seatHold expiration duration
      */
     public TicketServiceImpl(Venue venue, long expireMillies) {
-        this.bestAvailableSeats = new ArrayList<>(venue.getBestSeats());
-        this.seatGrid = new SeatGrid(venue);
+        VenueImpl venueImpl = (VenueImpl) venue;
+        this.bestAvailableSeats = new ArrayList<>(venueImpl.getBestSeats());
+        this.seatGrid = new SeatGrid(venueImpl);
         this.expireMillies = expireMillies;
     }
 
@@ -107,7 +110,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public String reserveSeats(int seatHoldId, String customerEmail) {
         synchronized (synchroLock) {
-            SeatHold seatHold = getSeatHold(seatHoldId);
+            SeatHoldImpl seatHold = getSeatHold(seatHoldId);
             String reservationId = Integer.toString(seatHold.getSeatHoldId());
             if (seatHold.isReserved()) {
                 return reservationId;
@@ -135,15 +138,15 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @VisibleForTesting
-    static SeatHold getCustomerSeatHold(SeatHold seatHold) {
+    static SeatHoldImpl getCustomerSeatHold(SeatHoldImpl seatHold) {
         return seatHold;
     }
 
     @VisibleForTesting
-    SeatHold findAndHoldSeatsInternal(int numSeats, String customerEmail) {
+    SeatHoldImpl findAndHoldSeatsInternal(int numSeats, String customerEmail) {
         try {
-            List<Seat> heldSeats = holdBestAdjacentSeats(numSeats, bestAvailableSeats, seatGrid);
-            SeatHold seatHold = new SeatHold(nextSeatHoldId++, customerEmail, heldSeats);
+            List<SeatImpl> heldSeats = holdBestAdjacentSeats(numSeats, bestAvailableSeats, seatGrid);
+            SeatHoldImpl seatHold = new SeatHoldImpl(nextSeatHoldId++, customerEmail, heldSeats);
             seatHolds.put(seatHold.getSeatHoldId(), seatHold);
             setExpirationTimeout(seatHold, expireMillies);
             return seatHold;
@@ -159,7 +162,7 @@ public class TicketServiceImpl implements TicketService {
      * @return the corresponding seatHold
      */
     @VisibleForTesting
-    SeatHold getSeatHold(int seatHoldId) {
+    SeatHoldImpl getSeatHold(int seatHoldId) {
         return seatHolds.get(seatHoldId);
     }
 
@@ -170,7 +173,7 @@ public class TicketServiceImpl implements TicketService {
      *
      * @param seatHold the seatHold to be expired
      */
-    void expire(SeatHold seatHold) {
+    void expire(SeatHoldImpl seatHold) {
         synchronized (synchroLock) {
             if (seatHold.isHeld()) {
                 seatHold.expire();
@@ -188,7 +191,7 @@ public class TicketServiceImpl implements TicketService {
      * @param timeoutMilliseconds number of milliseconds until expiration
      */
     @VisibleForTesting
-    void setExpirationTimeout(final SeatHold seatHold, long timeoutMilliseconds) {
+    void setExpirationTimeout(final SeatHoldImpl seatHold, long timeoutMilliseconds) {
         expirationTimer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -207,7 +210,7 @@ public class TicketServiceImpl implements TicketService {
      * @throws NoSeatsAvailableException if there are insufficient adjacent available seats
      */
     @VisibleForTesting
-    static List<Seat> holdBestAdjacentSeats(int numSeats, List<Seat> bestAvailableSeats, SeatGrid seatGrid)
+    static List<SeatImpl> holdBestAdjacentSeats(int numSeats, List<SeatImpl> bestAvailableSeats, SeatGrid seatGrid)
             throws NoSeatsAvailableException {
         /*
          * This method populates and evaluates 10 lists of sufficient available seats,
@@ -215,8 +218,8 @@ public class TicketServiceImpl implements TicketService {
          * average bestness of the collected adjacent seats) is held and returned.
          */
         int numCandidatesRemaining = 10;
-        Collection<List<Seat>> candidates = new ArrayList<>(numCandidatesRemaining);
-        for (Seat nextBestAvailableSeat : bestAvailableSeats) {
+        Collection<List<SeatImpl>> candidates = new ArrayList<>(numCandidatesRemaining);
+        for (SeatImpl nextBestAvailableSeat : bestAvailableSeats) {
             if (getNumberOfAdjacentAvailableSeats(nextBestAvailableSeat, seatGrid) >= numSeats) {
                 // found a seat with sufficient adjacent available seats
                 candidates.add(collectAdjacentSeats(numSeats, nextBestAvailableSeat, seatGrid));
@@ -226,7 +229,7 @@ public class TicketServiceImpl implements TicketService {
             }
         }
         if (candidates.size() > 0) {
-            List<Seat> winner = getBestCandidate(candidates);
+            List<SeatImpl> winner = getBestCandidate(candidates);
             holdSeats(winner, bestAvailableSeats, seatGrid);
             return winner;
         }
@@ -240,10 +243,10 @@ public class TicketServiceImpl implements TicketService {
      * @return the best list of seats
      */
     @VisibleForTesting
-    static List<Seat> getBestCandidate(Collection<List<Seat>> candidates) {
-        List<Seat> bestSoFar = null;
+    static List<SeatImpl> getBestCandidate(Collection<List<SeatImpl>> candidates) {
+        List<SeatImpl> bestSoFar = null;
         double bestAverageBestnessSoFar = Double.MAX_VALUE;
-        for (List<Seat> candidate : candidates) {
+        for (List<SeatImpl> candidate : candidates) {
             double candidateBestness = getAverageBestness(candidate);
             if (candidateBestness < bestAverageBestnessSoFar) {   // smaller bestness values implies better seats
                 bestSoFar = candidate;
@@ -260,12 +263,12 @@ public class TicketServiceImpl implements TicketService {
      * @return the average bestness
      */
     @VisibleForTesting
-    static double getAverageBestness(List<Seat> seatList) {
+    static double getAverageBestness(List<SeatImpl> seatList) {
         if (seatList.size() <= 0) {
             throw new IllegalArgumentException("Empty seatlist!");
         }
         double total = 0;
-        for (Seat seat : seatList) {
+        for (SeatImpl seat : seatList) {
             total += seat.getBestness();
         }
         return total / seatList.size();
@@ -279,7 +282,7 @@ public class TicketServiceImpl implements TicketService {
      * @return the number of adjacent available seats
      */
     @VisibleForTesting
-    static int getNumberOfAdjacentAvailableSeats(Seat seat, SeatGrid seatGrid) {
+    static int getNumberOfAdjacentAvailableSeats(SeatImpl seat, SeatGrid seatGrid) {
         final int rowNum = seat.getRowNum();
         final int initialSeatNumInRow = seat.getSeatNumInRow();
         final int numSeatsInRow = seatGrid.getNumSeatsPerRow();
@@ -303,10 +306,10 @@ public class TicketServiceImpl implements TicketService {
      * @param seatGrid the grid of all seats
      * @return a list containing the newly held seats
      *
-     * @see Venue for the way in which seat bestness is initialized.
+     * @see VenueImpl for the way in which seat bestness is initialized.
      */
     @VisibleForTesting
-    static List<Seat> collectAdjacentSeats(int numSeatsNeeded, Seat initialSeat, SeatGrid seatGrid) {
+    static List<SeatImpl> collectAdjacentSeats(int numSeatsNeeded, SeatImpl initialSeat, SeatGrid seatGrid) {
         /*
          * Here is the algorithm: From the initial seat, collect alternate seats on the right
          * and left sides, spreading outward as long as seats are available. If an unavailable
@@ -322,7 +325,7 @@ public class TicketServiceImpl implements TicketService {
         final int rowNum = initialSeat.getRowNum();
         final int initialSeatNumInRow = initialSeat.getSeatNumInRow();
         final int numSeatsInRow = seatGrid.getNumSeatsPerRow();
-        List<Seat> adjacentSeats = new LinkedList<>();
+        List<SeatImpl> adjacentSeats = new LinkedList<>();
         int numSeatsRemaining = numSeatsNeeded;
         boolean encounteredUnavailableSeat = false;
         for (int seatNumInRow :   // check seats on alternating sides, expanding outward from the initial seat
@@ -334,7 +337,7 @@ public class TicketServiceImpl implements TicketService {
             if (!encounteredUnavailableSeat) {
                 // Check the next adjacent seat on the other side of the venue.
                 if (seatGrid.isAvailable(rowNum, seatNumInRow)) {
-                    Seat seat = seatGrid.getSeat(rowNum, seatNumInRow);
+                    SeatImpl seat = seatGrid.getSeat(rowNum, seatNumInRow);
                     adjacentSeats.add(seat);
 
                     if (--numSeatsRemaining <= 0) {
@@ -349,7 +352,7 @@ public class TicketServiceImpl implements TicketService {
             // We encountered an unavailable seat on the other side of the venue.
             int direction = seatNumInRow < initialSeatNumInRow ? -1 : +1;   // left or right
             while (numSeatsRemaining > 0) {
-                Seat seat = seatGrid.getSeat(rowNum, seatNumInRow);
+                SeatImpl seat = seatGrid.getSeat(rowNum, seatNumInRow);
                 adjacentSeats.add(seat);
                 seatNumInRow += direction;
                 numSeatsRemaining -= 1;
@@ -369,8 +372,8 @@ public class TicketServiceImpl implements TicketService {
      * @param seatGrid the grid of all seats
      */
     @VisibleForTesting
-    static void holdSeats(List<Seat> seatsToBeHeld, List<Seat> bestAvailableSeats, SeatGrid seatGrid) {
-        for (Seat seat : seatsToBeHeld) {
+    static void holdSeats(List<SeatImpl> seatsToBeHeld, List<SeatImpl> bestAvailableSeats, SeatGrid seatGrid) {
+        for (SeatImpl seat : seatsToBeHeld) {
             seatGrid.setAvailability(seat.getRowNum(), seat.getSeatNumInRow(), false);
             bestAvailableSeats.remove(seat);
         }
@@ -385,10 +388,10 @@ public class TicketServiceImpl implements TicketService {
      * @param bestAvailableSeats the destination list of seats, ordered by bestness
      * @param seatGrid the grid of all seats
      */
-    static void makeSeatsAvailable(List<Seat> heldSeats, List<Seat> bestAvailableSeats, SeatGrid seatGrid) {
-        heldSeats.sort(Comparator.comparingInt(Seat::getBestness));
+    static void makeSeatsAvailable(List<SeatImpl> heldSeats, List<SeatImpl> bestAvailableSeats, SeatGrid seatGrid) {
+        heldSeats.sort(Comparator.comparingInt(SeatImpl::getBestness));
         int availIndex = 0;
-        for (Seat seat : new ArrayList<>(heldSeats)) {
+        for (SeatImpl seat : new ArrayList<>(heldSeats)) {
             availIndex = insertSeatByBestness(seat, bestAvailableSeats, availIndex);
             seatGrid.setAvailability(seat.getRowNum(), seat.getSeatNumInRow(), true);
         }
@@ -403,11 +406,11 @@ public class TicketServiceImpl implements TicketService {
      * @return the list index of the seat just after the newly inserted seat
      */
     @VisibleForTesting
-    static int insertSeatByBestness(Seat seatToInsert, List<Seat> bestAvailableSeats, int startingIndex) {
+    static int insertSeatByBestness(SeatImpl seatToInsert, List<SeatImpl> bestAvailableSeats, int startingIndex) {
         int numSeats = bestAvailableSeats.size();
         int insertSeatBestness = seatToInsert.getBestness();
         for (int index = startingIndex; index < numSeats; index++) {
-            Seat seat = bestAvailableSeats.get(index);
+            SeatImpl seat = bestAvailableSeats.get(index);
             if (insertSeatBestness < seat.getBestness()) {
                 bestAvailableSeats.add(index, seatToInsert);   // insert it
                 return index + 1;   // return the subsequent index

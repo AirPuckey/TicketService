@@ -1,12 +1,14 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.SeatHold;
+
 import java.util.List;
 
 
 /**
  * A {@code SeatHold} contains the information necessary to hold or reserve a set of seats.
  */
-public class SeatHold {
+public class SeatHoldImpl implements SeatHold {
 
     /** Possible states of a seatHold, */
     private enum State {
@@ -22,10 +24,10 @@ public class SeatHold {
     private final String customerEmail;
 
     /** The list of held seats. Order is unspecified. */
-    private final List<Seat> seats;
+    private final List<SeatImpl> seats;
 
     /** The state of this seatHold. */
-    private SeatHold.State state = State.HELD;
+    private volatile SeatHoldImpl.State state = State.HELD;
 
     /**
      * Constructs a new SeatHold.
@@ -34,7 +36,7 @@ public class SeatHold {
      * @param customerEmail the customer's email address
      * @param seats the held seats
      */
-    SeatHold(int seatHoldId, String customerEmail, List<Seat> seats) {
+    SeatHoldImpl(int seatHoldId, String customerEmail, List<SeatImpl> seats) {
         if (!isValidEmailAddress(customerEmail)) {
             throw new IllegalArgumentException("invalid email address: " + customerEmail);
         }
@@ -61,14 +63,12 @@ public class SeatHold {
         return customerEmail;
     }
 
-    /**
-     * The held seats. Note that a pointer to the list contained herein is returned,
-     * and this list is NOT immutable. The caller can add or remove seats.
-     *
-     * @return the held seats
-     */
-    public List<Seat> getHeldSeats() {
-        return seats;
+    public int numSeatsHeld() {
+        return seats.size();
+    }
+
+    public SeatImpl getSeat(int index) {
+        return seats.get(index);
     }
 
     /**
@@ -96,6 +96,16 @@ public class SeatHold {
      */
     public boolean isExpired() {
         return state == State.EXPIRED;
+    }
+
+    /**
+     * The held seats. Note that a pointer to the list contained herein is returned,
+     * and this list is NOT immutable. The caller can add or remove seats.
+     *
+     * @return the held seats
+     */
+    List<SeatImpl> getHeldSeats() {
+        return seats;
     }
 
     /**
@@ -149,7 +159,7 @@ public class SeatHold {
         buf.append(getSeatHoldId());
         buf.append(": ");
         buf.append(getHeldSeats().size());
-        for (Seat seat : getHeldSeats()) {
+        for (SeatImpl seat : getHeldSeats()) {
             buf.append(" ");
             buf.append(seat.toString());
         }

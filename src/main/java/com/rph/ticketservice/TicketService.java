@@ -1,6 +1,6 @@
 package com.rph.ticketservice;
 
-import com.rph.ticketservice.implementation.SeatHold;
+import com.rph.ticketservice.implementation.SeatHoldImpl;
 
 public interface TicketService {
     /**

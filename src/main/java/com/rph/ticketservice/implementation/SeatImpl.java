@@ -1,10 +1,12 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.Seat;
+
 /**
  * A {@code Seat} is an immutable object containing the static (unchanging) information
  * about a seat.
  */
-public class Seat {
+public class SeatImpl implements Seat {
 
     /** The row number of the seat. */
     private final int rowNum;
@@ -23,7 +25,7 @@ public class Seat {
      * @param seatNumInRow the seat number within the row
      * @param bestness the bestness value
      */
-    Seat(int rowNum, int seatNumInRow, int bestness) {
+    SeatImpl(int rowNum, int seatNumInRow, int bestness) {
         this.rowNum = rowNum;
         this.seatNumInRow = seatNumInRow;
         this.bestness = bestness;
@@ -70,10 +72,10 @@ public class Seat {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof Seat)) {
+        if (!(obj instanceof SeatImpl)) {
             return false;
         }
-        Seat that = (Seat) obj;
+        SeatImpl that = (SeatImpl) obj;
         return this.getRowNum() == that.getRowNum()
                 && this.getSeatNumInRow() == that.getSeatNumInRow()
                 && this.getBestness() == that.getBestness();

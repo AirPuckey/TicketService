@@ -1,6 +1,5 @@
 package com.rph.ticketservice.implementation;
 
-import com.rph.ticketservice.implementation.Seat;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -11,10 +10,10 @@ public class SeatTest {
 
     @Test
     public void testAll() {
-        Seat seat = new Seat(5, 15, 77);
+        SeatImpl seat = new SeatImpl(5, 15, 77);
         assertEquals("6x16:77", seat.toString());
         assertEquals(20554317, seat.hashCode());
-        seat = new Seat(9, 19, 199);
+        seat = new SeatImpl(9, 19, 199);
         assertEquals(199, seat.getBestness());
         assertEquals(9, seat.getRowNum());
         assertEquals(19, seat.getSeatNumInRow());
@@ -23,10 +22,10 @@ public class SeatTest {
         assertFalse(seat.equals(null));
         assertTrue(seat.equals(seat));
         assertFalse(seat.equals(new Object()));
-        Seat equalSeat = new Seat(9, 19, 199);
+        SeatImpl equalSeat = new SeatImpl(9, 19, 199);
         assertTrue(seat.equals(equalSeat));
         assertTrue(equalSeat.equals(seat));
-        Seat differentSeat = new Seat(7, 11, 21);
+        SeatImpl differentSeat = new SeatImpl(7, 11, 21);
         assertFalse(seat.equals(differentSeat));
         assertFalse(differentSeat.equals(seat));
     }

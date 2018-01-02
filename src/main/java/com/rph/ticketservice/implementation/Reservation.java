@@ -7,7 +7,7 @@ package com.rph.ticketservice.implementation;
 public class Reservation {
 
     /** The seatHold from which this reservation was derived. */
-    private final SeatHold seatHold;
+    private final SeatHoldImpl seatHold;
 
     /** The reservation ID associated with this reservation. */
     private final String reservationId;
@@ -18,7 +18,7 @@ public class Reservation {
      * @param seatHold the setHold
      * @param reservationId the reservationId
      */
-    Reservation(SeatHold seatHold, String reservationId) {
+    Reservation(SeatHoldImpl seatHold, String reservationId) {
         this.seatHold = seatHold;
         this.reservationId = reservationId;
     }
@@ -28,7 +28,7 @@ public class Reservation {
      *
      * @return the seatHold
      */
-    public SeatHold getSeatHold() {
+    public SeatHoldImpl getSeatHold() {
         return seatHold;
     }
 

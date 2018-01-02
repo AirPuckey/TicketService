@@ -1,5 +1,8 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.Seat;
+import com.rph.ticketservice.Venue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -15,7 +18,7 @@ import java.util.stream.Stream;
  * bestness value). Those same seats are also contained in a rectangular grid, allowing
  * them to be obtained by seat coordinate.
  */
-public class Venue {
+public class VenueImpl implements Venue {
 
     private static final int MAXIMUM_NUMBER_OF_ROWS = 1000;   // for sanity check
 
@@ -28,10 +31,13 @@ public class Venue {
     private final int numSeatsPerRow;
 
     /** All the seats, ordered by decreasing bestness (lower index: better seat). */
+    private final List<SeatImpl> bestSeatsImpl;   // unmodifiable
+
+    /** All the seats, ordered by decreasing bestness (lower index: better seat). */
     private final List<Seat> bestSeats;   // unmodifiable
 
     /** The seats in a rectangular grid. */
-    private final Seat[][] seatGrid;
+    private final SeatImpl[][] seatGrid;
 
 
     /**
@@ -41,7 +47,7 @@ public class Venue {
      * @param numSeatsPerRow number of seats in each row
      * @param bestRowNum the best row number of the venue (1 based)
      */
-    public Venue(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
+    public VenueImpl(final int numRows, final int numSeatsPerRow, final int bestRowNum) {
         if (numRows <= 0 || numRows >= MAXIMUM_NUMBER_OF_ROWS) {
             throw new IllegalArgumentException("bad rows: " + numRows);
         }
@@ -51,8 +57,9 @@ public class Venue {
         if (bestRowNum <= 0 || bestRowNum > numRows) {
             throw new IllegalArgumentException("bad bestRow: " + bestRowNum);
         }
-        this.bestSeats = Collections.unmodifiableList(buildBestSeatsList(numRows, numSeatsPerRow, bestRowNum - 1));
-        this.seatGrid = buildSeatGrid(numRows, numSeatsPerRow, bestSeats);
+        this.bestSeatsImpl = Collections.unmodifiableList(buildBestSeatsImplList(numRows, numSeatsPerRow, bestRowNum - 1));
+        this.bestSeats = Collections.unmodifiableList(new ArrayList<Seat>(bestSeatsImpl));
+        this.seatGrid = buildSeatGrid(numRows, numSeatsPerRow, bestSeatsImpl);
         this.numRows = numRows;
         this.numSeatsPerRow = numSeatsPerRow;
     }
@@ -63,7 +70,7 @@ public class Venue {
      * @return number of seats in the venue
      */
     public int getNumberOfSeats() {
-        return bestSeats.size();
+        return bestSeatsImpl.size();
     }
 
     /**
@@ -84,13 +91,17 @@ public class Venue {
         return numSeatsPerRow;
     }
 
+    public List<Seat> bestSeats() {
+        return bestSeats;
+    }
+
     /**
      * The list of seats, ordered by bestness. This list is unmodifiable.
      *
      * @return unmodifiable list of seats, ordered by decreasing bestness
      */
-    public List<Seat> getBestSeats() {
-        return bestSeats;
+    public List<SeatImpl> getBestSeats() {
+        return bestSeatsImpl;
     }
 
     /**
@@ -101,7 +112,7 @@ public class Venue {
      * @param seatNumInRow the seat number in the row
      * @return the seat at the specified coordinates
      */
-    public Seat getSeat(int rowNum, int seatNumInRow) {
+    public SeatImpl getSeat(int rowNum, int seatNumInRow) {
         return seatGrid[rowNum][seatNumInRow];
     }
 
@@ -118,11 +129,11 @@ public class Venue {
      * @return the list of seats ordered by bestness
      */
     @VisibleForTesting
-    static List<Seat> buildBestSeatsList(int numRows, int numSeatsPerRow, int bestRowNum) {
+    static List<SeatImpl> buildBestSeatsImplList(int numRows, int numSeatsPerRow, int bestRowNum) {
         final int numSeats = numRows * numSeatsPerRow;
         int numSeatsPerAdd = Math.max((numSeatsPerRow / numRows) * 2, 1);
         final int bestSeatNumInRow = (numSeatsPerRow - 1) / 2;
-        List<Seat> bestSeats = new ArrayList<>(numSeats);
+        List<SeatImpl> bestSeats = new ArrayList<>(numSeats);
         List<List<Integer>> bestSeatNumbersPerRow = new ArrayList<>();
         for (int i = 0; i < numRows; i++) {
             // Seat numbers in each row ordered by bestness: start in the middle,
@@ -139,7 +150,7 @@ public class Venue {
             for (int i = 0; i < numSeatsPerAdd; i++) {
                 List<Integer> bestSeatNumbersInThisRow = bestSeatNumbersPerRow.get(row);
                 if (!bestSeatNumbersInThisRow.isEmpty()) {
-                    Seat seat = new Seat(row, bestSeatNumbersInThisRow.get(0), bestness++);
+                    SeatImpl seat = new SeatImpl(row, bestSeatNumbersInThisRow.get(0), bestness++);
                     bestSeats.add(seat);
                     bestSeatNumbersInThisRow.remove(0);
                 }
@@ -153,7 +164,6 @@ public class Venue {
      *
      * Consider the following series (disregard line breaks):
      *
-     * 0,
      * 0, +1, -1,
      * 0, +1, -1, +2, -2,
      * 0, +1, -1, +2, -2, +3, -3,
@@ -172,7 +182,7 @@ public class Venue {
         int[] rowNumSeries = new int[len];
         try {
             int x = 0;
-            for (int i = 0; true; i++) {
+            for (int i = 1; true; i++) {
                 rowNumSeries[x++] = bestRowNum;
                 for (int j = 1; j <= i; j++) {
                     int rowNum = bestRowNum + j;
@@ -192,15 +202,15 @@ public class Venue {
     }
 
     @VisibleForTesting
-    static Seat[][] buildSeatGrid(int numRows, int numSeatsPerRow, List<Seat> bestSeats) {
+    static SeatImpl[][] buildSeatGrid(int numRows, int numSeatsPerRow, List<SeatImpl> bestSeats) {
         if (numRows * numSeatsPerRow != bestSeats.size()) {
             throw new IllegalArgumentException("bad bestSeats size: " + bestSeats.size());
         }
-        Seat[][] seatGrid = new Seat[numRows][];
+        SeatImpl[][] seatGrid = new SeatImpl[numRows][];
         for (int rowNum = 0; rowNum < numRows; rowNum++) {
-            seatGrid[rowNum] = new Seat[numSeatsPerRow];
+            seatGrid[rowNum] = new SeatImpl[numSeatsPerRow];
         }
-        for (Seat seat: bestSeats) {
+        for (SeatImpl seat: bestSeats) {
             int rowNum = seat.getRowNum();
             int seatNumInRow = seat.getSeatNumInRow();
             if (seatGrid[rowNum][seatNumInRow] != null) {

@@ -7,7 +7,7 @@ package com.rph.ticketservice.implementation;
 public class SeatGrid {
 
     /** The venue containing the seats. */
-    private final Venue venue;
+    private final VenueImpl venue;
 
     /** A rectangular grid containing the availability of each seat. */
     private boolean[][] seatIsAvailable;
@@ -18,7 +18,7 @@ public class SeatGrid {
      *
      * @param venue the associated venue
      */
-    SeatGrid(Venue venue) {
+    SeatGrid(VenueImpl venue) {
         this.venue = venue;
         this.seatIsAvailable = buildSeatAvailabilityGrid(venue.getNumRows(), venue.getNumSeatsPerRow());
     }
@@ -69,7 +69,7 @@ public class SeatGrid {
      * @param seatNumInRow the seat number in the row
      * @return the seat
      */
-    public Seat getSeat(int rowNum, int seatNumInRow) {
+    public SeatImpl getSeat(int rowNum, int seatNumInRow) {
         return venue.getSeat(rowNum, seatNumInRow);
     }
 

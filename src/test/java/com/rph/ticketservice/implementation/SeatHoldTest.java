@@ -1,22 +1,20 @@
 package com.rph.ticketservice.implementation;
 
-import com.rph.ticketservice.implementation.Seat;
-import com.rph.ticketservice.implementation.SeatHold;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.rph.ticketservice.implementation.SeatHold.isValidEmailAddress;
+import static com.rph.ticketservice.implementation.SeatHoldImpl.isValidEmailAddress;
 import static org.junit.Assert.*;
 
 public class SeatHoldTest {
 
     @Test
     public void testToString() {
-        List<Seat> heldSeats = new LinkedList<>();
-        heldSeats.add(new Seat(4, 9, 99));
-        SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+        List<SeatImpl> heldSeats = new LinkedList<>();
+        heldSeats.add(new SeatImpl(4, 9, 99));
+        SeatHoldImpl seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
         assertEquals("HELD 17: 1 5x10:99", seatHold.toString());
     }
 
@@ -29,16 +27,22 @@ public class SeatHoldTest {
     }
 
     @Test
-    public void testReserveSeats_IsReserved_IsHeld() {
-        List<Seat> heldSeats = new LinkedList<>();
-        heldSeats.add(new Seat(4, 9, 99));
-        SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+    public void testReserve_IsReserved_IsHeld() {
+        List<SeatImpl> heldSeats = new LinkedList<>();
+        heldSeats.add(new SeatImpl(4, 9, 99));
+        SeatHoldImpl seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
         assertTrue(seatHold.isHeld());
         assertFalse(seatHold.isReserved());
+        assertFalse(seatHold.isExpired());
         assertEquals(1, heldSeats.size());
+        boolean isReserved = seatHold.reserve();
+        assertTrue(isReserved);
+        assertFalse(seatHold.isHeld());
+        assertTrue(seatHold.isReserved());
+        assertFalse(seatHold.isExpired());
         assertEquals(1, heldSeats.size());
 
-        seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+        seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
         assertTrue(seatHold.isHeld());
         assertEquals(1, heldSeats.size());
         seatHold.expire();
@@ -51,9 +55,9 @@ public class SeatHoldTest {
 
     @Test
     public void testExpire_IsExpired() {
-        List<Seat> heldSeats = new LinkedList<>();
-        heldSeats.add(new Seat(4, 9, 99));
-        SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+        List<SeatImpl> heldSeats = new LinkedList<>();
+        heldSeats.add(new SeatImpl(4, 9, 99));
+        SeatHoldImpl seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
         assertTrue(seatHold.isHeld());
         assertFalse(seatHold.isExpired());
         assertEquals(1, heldSeats.size());
@@ -64,25 +68,28 @@ public class SeatHoldTest {
 
     @Test
     public void testGetters() {
-        List<Seat> heldSeats = new LinkedList<>();
-        heldSeats.add(new Seat(4, 9, 99));
-        SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+        List<SeatImpl> heldSeats = new LinkedList<>();
+        SeatImpl seat = new SeatImpl(4, 9, 99);
+        heldSeats.add(seat);
+        SeatHoldImpl seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
         assertTrue(heldSeats == seatHold.getHeldSeats());
         assertEquals("ronald.hughes@gmail.com", seatHold.getCustomerEmail());
         assertEquals(17, seatHold.getSeatHoldId());
+        assertEquals(1, seatHold.numSeatsHeld());
+        assertEquals(seat, seatHold.getSeat(0));
     }
 
     @Test
     public void testConstructor() {
-        List<Seat> heldSeats = new LinkedList<>();
-        heldSeats.add(new Seat(4, 9, 99));
-        SeatHold seatHold = new SeatHold(17, "ronald.hughes@gmail.com", heldSeats);
+        List<SeatImpl> heldSeats = new LinkedList<>();
+        heldSeats.add(new SeatImpl(4, 9, 99));
+        SeatHoldImpl seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
         assertTrue(heldSeats == seatHold.getHeldSeats());
         assertEquals("ronald.hughes@gmail.com", seatHold.getCustomerEmail());
         assertEquals(17, seatHold.getSeatHoldId());
 
         try {
-            seatHold = new SeatHold(17, "foo", heldSeats);
+            seatHold = new SeatHoldImpl(17, "foo", heldSeats);
             fail("Exception expected!");
         } catch (IllegalArgumentException e) {
             // expected exception

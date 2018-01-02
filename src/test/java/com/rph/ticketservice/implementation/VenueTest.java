@@ -1,7 +1,5 @@
 package com.rph.ticketservice.implementation;
 
-import com.rph.ticketservice.implementation.Seat;
-import com.rph.ticketservice.implementation.Venue;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -14,16 +12,16 @@ public class VenueTest {
 
     @Test
     public void testBuildSeatGrid() {
-        List<Seat> bestSeats = new Venue(10, 20, 5).getBestSeats();
-        Seat[][] seatGrid = Venue.buildSeatGrid(10, 20, bestSeats);
-        Seat seat = seatGrid[5][15];
+        List<SeatImpl> bestSeats = new VenueImpl(10, 20, 5).getBestSeats();
+        SeatImpl[][] seatGrid = VenueImpl.buildSeatGrid(10, 20, bestSeats);
+        SeatImpl seat = seatGrid[5][15];
         assertEquals(5, seat.getRowNum());
         assertEquals(15, seat.getSeatNumInRow());
 
-        List<Seat> bestAvailableSeats = new ArrayList<>(bestSeats);   // writeable copy
+        List<SeatImpl> bestAvailableSeats = new ArrayList<>(bestSeats);   // writeable copy
         seat = bestAvailableSeats.remove(0);
         try {
-            Venue.buildSeatGrid(10, 20, bestAvailableSeats);
+            VenueImpl.buildSeatGrid(10, 20, bestAvailableSeats);
             fail("Exception expected!");
         } catch (IllegalArgumentException e) {
             // expected exception
@@ -33,7 +31,7 @@ public class VenueTest {
         bestAvailableSeats.add(0, seat);
         bestAvailableSeats.add(0, seat);
         try {
-            Venue.buildSeatGrid(10, 20, bestAvailableSeats);
+            VenueImpl.buildSeatGrid(10, 20, bestAvailableSeats);
             fail("Exception expected!");
         } catch (IllegalArgumentException e) {
             // expected exception
@@ -42,23 +40,28 @@ public class VenueTest {
 
     @Test
     public void testBuildBestRowSeries() {
-        int[] nextBestRows = Venue.buildBestRowSeries(10,3,200);
+        int[] nextBestRows = VenueImpl.buildBestRowSeries(10,3,200);
         assertEquals(200, nextBestRows.length);
 
         assertEquals(3, nextBestRows[0]);
-        assertEquals(3, nextBestRows[1]);
-        assertEquals(4, nextBestRows[2]);
-        assertEquals(2, nextBestRows[3]);
+        assertEquals(4, nextBestRows[1]);
+        assertEquals(2, nextBestRows[2]);
+        assertEquals(3, nextBestRows[3]);
+        assertEquals(4, nextBestRows[4]);
+        assertEquals(2, nextBestRows[5]);
+        assertEquals(5, nextBestRows[6]);
+        assertEquals(1, nextBestRows[7]);
+        assertEquals(3, nextBestRows[8]);
         // ...
-        assertEquals(5, nextBestRows[196]);
-        assertEquals(1, nextBestRows[197]);
-        assertEquals(6, nextBestRows[198]);
-        assertEquals(0, nextBestRows[199]);
+        assertEquals(1, nextBestRows[196]);
+        assertEquals(6, nextBestRows[197]);
+        assertEquals(0, nextBestRows[198]);
+        assertEquals(7, nextBestRows[199]);
     }
 
     @Test
     public void testBuildBestSeatsList() {
-        List<Seat> bestSeats = Venue.buildBestSeatsList(10, 20, 4);
+        List<SeatImpl> bestSeats = VenueImpl.buildBestSeatsImplList(10, 20, 4);
 
         assertEquals(4, bestSeats.get(0).getRowNum());
         assertEquals(9, bestSeats.get(0).getSeatNumInRow());
@@ -69,9 +72,9 @@ public class VenueTest {
         assertEquals(4, bestSeats.get(3).getRowNum());
         assertEquals(11, bestSeats.get(3).getSeatNumInRow());
         // ...
-        assertEquals(5, bestSeats.get(10).getRowNum());
+        assertEquals(3, bestSeats.get(10).getRowNum());
         assertEquals(8, bestSeats.get(10).getSeatNumInRow());
-        assertEquals(5, bestSeats.get(11).getRowNum());
+        assertEquals(3, bestSeats.get(11).getRowNum());
         assertEquals(11, bestSeats.get(11).getSeatNumInRow());
         // ...
         assertEquals(9, bestSeats.get(198).getRowNum());
@@ -105,19 +108,19 @@ public class VenueTest {
 
     @Test
     public void testSettersAndGetters() {
-        Venue venue = new Venue(10, 20, 5);
+        VenueImpl venue = new VenueImpl(10, 20, 5);
         assertEquals(10, venue.getNumRows());
         assertEquals(20, venue.getNumSeatsPerRow());
         assertEquals(10 * 20, venue.getNumberOfSeats());
         assertBestAvailableSeatsListIsValid(10, 20, venue.getBestSeats());
-        Seat seat = venue.getSeat(5, 7);
+        SeatImpl seat = venue.getSeat(5, 7);
         assertEquals(5, seat.getRowNum());
         assertEquals(7, seat.getSeatNumInRow());
     }
 
-    public static Venue buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {
-        Venue venue = new Venue(numRows, numSeatsPerRow, bestRowNum + 1);
-        List<Seat> bestSeats = venue.getBestSeats();
+    public static VenueImpl buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {
+        VenueImpl venue = new VenueImpl(numRows, numSeatsPerRow, bestRowNum + 1);
+        List<SeatImpl> bestSeats = venue.getBestSeats();
         assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestSeats);
         assertEquals(numRows * numSeatsPerRow, bestSeats.size());   // list is full (no missing seats)
         return venue;
@@ -134,13 +137,13 @@ public class VenueTest {
      * @param bestAvailableSeats the ordered list to be verifies
      */
     public static void assertBestAvailableSeatsListIsValid(final int numRows, final int numSeatsPerRow,
-                                                           List<Seat> bestAvailableSeats) {
+                                                           List<SeatImpl> bestAvailableSeats) {
         boolean[][] seatIsContainedInList = new boolean[numRows][];
         for (int rowNum = 0; rowNum < numRows; rowNum++) {
             seatIsContainedInList[rowNum] = new boolean[numSeatsPerRow];
         }
         int highestBestnesValueSoFar = -1;
-        for (Seat seat : bestAvailableSeats) {
+        for (SeatImpl seat : bestAvailableSeats) {
             final int rowNum = seat.getRowNum();
             final int seatNumInRow = seat.getSeatNumInRow();
             assertTrue("seat: bad row number: " + rowNum, rowNum >= 0 && rowNum < numRows);
