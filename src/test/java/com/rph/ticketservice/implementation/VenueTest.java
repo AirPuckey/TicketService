@@ -1,5 +1,6 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.Seat;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -109,19 +110,20 @@ public class VenueTest {
     @Test
     public void testSettersAndGetters() {
         VenueImpl venue = new VenueImpl(10, 20, 5);
+        assertNotNull(venue.bestSeats());
         assertEquals(10, venue.getNumRows());
         assertEquals(20, venue.getNumSeatsPerRow());
         assertEquals(10 * 20, venue.getNumberOfSeats());
-        assertBestAvailableSeatsListIsValid(10, 20, venue.getBestSeats());
+        assertBestAvailableSeatListIsValid(10, 20, venue.getBestSeats());
         SeatImpl seat = venue.getSeat(5, 7);
         assertEquals(5, seat.getRowNum());
         assertEquals(7, seat.getSeatNumInRow());
     }
 
-    public static VenueImpl buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {
+    static VenueImpl buildAndValidateVenue(int numRows, int numSeatsPerRow, int bestRowNum) {
         VenueImpl venue = new VenueImpl(numRows, numSeatsPerRow, bestRowNum + 1);
         List<SeatImpl> bestSeats = venue.getBestSeats();
-        assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestSeats);
+        assertBestAvailableSeatListIsValid(numRows, numSeatsPerRow, bestSeats);
         assertEquals(numRows * numSeatsPerRow, bestSeats.size());   // list is full (no missing seats)
         return venue;
     }
@@ -136,8 +138,8 @@ public class VenueTest {
      * @param numSeatsPerRow number of seats per row (to check the seat's seat in row range
      * @param bestAvailableSeats the ordered list to be verifies
      */
-    public static void assertBestAvailableSeatsListIsValid(final int numRows, final int numSeatsPerRow,
-                                                           List<SeatImpl> bestAvailableSeats) {
+    public static void assertBestAvailableSeatListIsValid(final int numRows, final int numSeatsPerRow,
+                                                          List<SeatImpl> bestAvailableSeats) {
         boolean[][] seatIsContainedInList = new boolean[numRows][];
         for (int rowNum = 0; rowNum < numRows; rowNum++) {
             seatIsContainedInList[rowNum] = new boolean[numSeatsPerRow];

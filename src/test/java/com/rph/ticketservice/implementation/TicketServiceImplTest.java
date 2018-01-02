@@ -53,7 +53,7 @@ public class TicketServiceImplTest {
                 SeatImpl seat = unavailableSeats.remove(unavailableSeats.size() - 1);
                 int result = TicketServiceImpl.insertSeatByBestness(seat, bestAvailableSeats, 0);
                 assertEquals(bestAvailableSeats.indexOf(seat) + 1, result);
-                VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
+                VenueTest.assertBestAvailableSeatListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
             }
             assertEquals(bestSeats, bestAvailableSeats);
         } finally {
@@ -77,10 +77,10 @@ public class TicketServiceImplTest {
             } catch (NoSeatsAvailableException e) {
                 throw new RuntimeException(e);   // should not heppen
             }
-            VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
+            VenueTest.assertBestAvailableSeatListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
             assertEquals(numSeatsInVenue, bestAvailableSeats.size() + heldSeats.size());
             TicketServiceImpl.makeSeatsAvailable(heldSeats, bestAvailableSeats, seatGrid);
-            VenueTest.assertBestAvailableSeatsListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
+            VenueTest.assertBestAvailableSeatListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
             assertEquals(numSeatsInVenue, bestAvailableSeats.size());
         } finally {
             reset();
