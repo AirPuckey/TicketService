@@ -76,7 +76,7 @@ Build them.
 `cd VenueViewer && ./gradlew jar && cd ..`
 
 Copy the resulting jar files into the current directory,
-giving them more palateable names.
+giving them more palatable names.
 
 `cp TicketService/build/libs/ticketservice-1.0-SNAPSHOT.jar ticketService.jar`
 
