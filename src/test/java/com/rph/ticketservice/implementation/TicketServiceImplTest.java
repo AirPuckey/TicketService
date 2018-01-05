@@ -1,5 +1,8 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.SeatHoldExpiredException;
+import com.rph.ticketservice.SeatHoldNotFoundException;
+import com.rph.ticketservice.SeatsUnavailableException;
 import com.rph.ticketservice.SeatHold;
 import org.junit.Test;
 
@@ -74,7 +77,7 @@ public class TicketServiceImplTest {
             List<SeatImpl> heldSeats;
             try {
                 heldSeats = TicketServiceImpl.holdBestAdjacentSeats(numSeatsToBeHeld, bestAvailableSeats, seatGrid);
-            } catch (NoSeatsAvailableException e) {
+            } catch (SeatsUnavailableException e) {
                 throw new RuntimeException(e);   // should not heppen
             }
             VenueTest.assertBestAvailableSeatListIsValid(numRows, numSeatsPerRow, bestAvailableSeats);
@@ -214,7 +217,7 @@ public class TicketServiceImplTest {
                 try {
                     List<SeatImpl> heldSeats = testHoldBestAdjacentSeats(numSeats);
                     holds.add(heldSeats);
-                } catch (NoSeatsAvailableException e) {
+                } catch (SeatsUnavailableException e) {
                     numExceptions += 1;
                     assertEquals(numSeatsHeldOperations, holds.size());
                     assertEquals(0, bestAvailableSeats.size());
@@ -226,7 +229,7 @@ public class TicketServiceImplTest {
         }
     }
 
-    private List<SeatImpl> testHoldBestAdjacentSeats(int numSeats) throws NoSeatsAvailableException {
+    private List<SeatImpl> testHoldBestAdjacentSeats(int numSeats) throws SeatsUnavailableException {
         List<SeatImpl> heldSeats = TicketServiceImpl.holdBestAdjacentSeats(numSeats, bestAvailableSeats, seatGrid);
         assertAdjacent(heldSeats);
         assertDisjoint(heldSeats, bestAvailableSeats);
@@ -241,7 +244,7 @@ public class TicketServiceImplTest {
             List<SeatImpl> heldSeats;
             try {
                 heldSeats = testHoldBestAdjacentSeats(7);
-            } catch (NoSeatsAvailableException e) {
+            } catch (SeatsUnavailableException e) {
                 throw new RuntimeException(e);
             }
             SeatHoldImpl seatHold = new SeatHoldImpl(17, "ronald.hughes@gmail.com", heldSeats);
@@ -265,9 +268,10 @@ public class TicketServiceImplTest {
         try {
             final String customerEmail = "ronald.hughes@gmail.com";
             TicketServiceImpl tsi = new TicketServiceImpl(venue);
-            SeatHoldImpl seatHold1 = tsi.findAndHoldSeatsInternal(7, customerEmail);
+            SeatHoldImpl seatHold1 = doFindAndHoldSeatsInternal(tsi,7, customerEmail);
             SeatHoldImpl seatHold2 = tsi.getSeatHold(seatHold1.getSeatHoldId());
             assertEquals(seatHold1.getSeatHoldId(), seatHold2.getSeatHoldId());
+            assertNull(tsi.getSeatHold(-17));
         } finally {
             reset();
         }
@@ -292,9 +296,9 @@ public class TicketServiceImplTest {
         try {
             final String customerEmail = "ronald.hughes@gmail.com";
             TicketServiceImpl tsi = new TicketServiceImpl(venue);
-            SeatHoldImpl seatHold = tsi.findAndHoldSeatsInternal(7, customerEmail);
+            SeatHoldImpl seatHold = doFindAndHoldSeatsInternal(tsi,7, customerEmail);
             String reservationId;
-            reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+            reservationId = doReserveSeats(tsi, seatHold.getSeatHoldId(), customerEmail);
             Reservation reservation = tsi.getReservation(reservationId);
             assertEquals(reservationId, reservation.getReservationId());
         } finally {
@@ -308,19 +312,46 @@ public class TicketServiceImplTest {
         try {
             final String customerEmail = "ronald.hughes@gmail.com";
             TicketServiceImpl tsi = new TicketServiceImpl(venue);
-            SeatHoldImpl seatHold = tsi.findAndHoldSeatsInternal(7, customerEmail);
-            String reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+            SeatHoldImpl seatHold = doFindAndHoldSeatsInternal(tsi,7, customerEmail);
+            String reservationId = doReserveSeats(tsi, seatHold.getSeatHoldId(), customerEmail);
             Reservation reservation = tsi.getReservation(reservationId);
             assertEquals(reservationId, reservation.getReservationId());
-            reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+            reservationId = doReserveSeats(tsi, seatHold.getSeatHoldId(), customerEmail);
 
-            seatHold = tsi.findAndHoldSeatsInternal(7, customerEmail);
+            seatHold = doFindAndHoldSeatsInternal(tsi,7, customerEmail);
+            try {
+                tsi.reserveSeats(-17, customerEmail);
+                fail("Exception expected!");
+            } catch (SeatHoldExpiredException e) {
+                fail("Different exception expected!");
+            } catch (SeatHoldNotFoundException e) {
+                // expected exception
+            }
+
+            seatHold = doFindAndHoldSeatsInternal(tsi,7, customerEmail);
             tsi.expire(seatHold);
-            reservationId = tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
-            assertNull(reservationId);
+            try {
+                tsi.reserveSeats(seatHold.getSeatHoldId(), customerEmail);
+                fail("Exception expected!");
+            } catch (SeatHoldNotFoundException e) {
+                fail("Different exception expected!");
+            } catch (SeatHoldExpiredException e) {
+                // expected exception
+            }
         } finally {
             reset();
         }
+    }
+
+    private static String doReserveSeats(TicketServiceImpl tsi, int seatHoldId, String customerEmail) {
+        try {
+            return tsi.reserveSeats(seatHoldId, customerEmail);
+        } catch (SeatHoldNotFoundException e) {
+            fail("Unexpected SeatHoldNotFoundException!");
+        } catch (SeatHoldExpiredException e) {
+            fail("Unexpected SeatHoldExpiredException!");
+        }
+        throw new RuntimeException("WTF?");
     }
 
     @Test
@@ -329,20 +360,25 @@ public class TicketServiceImplTest {
         try {
             final String customerEmail = "ronald.hughes@gmail.com";
             TicketServiceImpl tsi = new TicketServiceImpl(venue);
-            SeatHoldImpl seatHold1 = tsi.findAndHoldSeatsInternal(20, customerEmail);
+            SeatHoldImpl seatHold1 = doFindAndHoldSeatsInternal(tsi, 20, customerEmail);
             SeatHoldImpl seatHold2 = tsi.getSeatHold(seatHold1.getSeatHoldId());
             assertEquals(seatHold1.getSeatHoldId(), seatHold2.getSeatHoldId());
 
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNull(tsi.findAndHoldSeatsInternal(20, customerEmail));   // no more seats available
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            try {
+                tsi.findAndHoldSeatsInternal(20, customerEmail);   // no more seats available
+                fail("Exception expected!");
+            } catch (SeatsUnavailableException e) {
+                // expected exception
+            }
         } finally {
             reset();
         }
@@ -354,25 +390,39 @@ public class TicketServiceImplTest {
         try {
             final String customerEmail = "ronald.hughes@gmail.com";
             TicketServiceImpl tsi = new TicketServiceImpl(venue);
-            SeatHoldImpl seatHold1 = tsi.findAndHoldSeatsInternal(20, customerEmail);
+            SeatHoldImpl seatHold1 = doFindAndHoldSeatsInternal(tsi, 20, customerEmail);
             SeatHoldImpl seatHold2 = tsi.getSeatHold(seatHold1.getSeatHoldId());
             assertEquals(seatHold1.getSeatHoldId(), seatHold2.getSeatHoldId());
 
-            SeatHold seatHold = tsi.findAndHoldSeats(20, customerEmail);
+            SeatHold seatHold = doFindAndHoldSeatsInternal(tsi, 20, customerEmail);
             assertNotNull(seatHold);
 
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNotNull(tsi.findAndHoldSeatsInternal(20, customerEmail));
-            assertNull(tsi.findAndHoldSeatsInternal(20, customerEmail));   // no more seats available
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            assertNotNull(doFindAndHoldSeatsInternal(tsi, 20, customerEmail));
+            try {
+                tsi.findAndHoldSeatsInternal(20, customerEmail);   // no more seats available
+                fail("Exception expected!");
+            } catch (SeatsUnavailableException e) {
+                // expected exception
+            }
         } finally {
             reset();
         }
+    }
+
+    private SeatHoldImpl doFindAndHoldSeatsInternal(TicketServiceImpl tsi, int numSeats, String customerEmail) {
+        try {
+            return tsi.findAndHoldSeatsInternal(numSeats, customerEmail);
+        } catch (SeatsUnavailableException e) {
+            fail("Unexpected SeatsUnavailableException!");
+        }
+        throw new RuntimeException("WTF?");
     }
 
     @Test
@@ -381,7 +431,7 @@ public class TicketServiceImplTest {
         try {
             final String customerEmail = "ronald.hughes@gmail.com";
             TicketServiceImpl tsi = new TicketServiceImpl(venue);
-            tsi.findAndHoldSeatsInternal(7, customerEmail);
+            doFindAndHoldSeatsInternal(tsi, 7, customerEmail);
             int numSeatsAvailable = tsi.numSeatsAvailable();
             assertEquals(193, numSeatsAvailable);
         } finally {

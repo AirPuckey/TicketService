@@ -171,28 +171,36 @@ public class Main {
             while (true) {
                 while ((ticketService.numSeatsAvailable() > 0) || (pendingHolds.size() > 0)) {
                     int numSeats = getNumSeatsInParty(numSeatsPerRow);
-                    SeatHold seatHold = ticketService.findAndHoldSeats(numSeats, EMAIL_ADDRESS);
-                    if (seatHold == null) {
+                    SeatHold seatHold;
+                    try {
+                        seatHold = ticketService.findAndHoldSeats(numSeats, EMAIL_ADDRESS);
+                    } catch (SeatsUnavailableException e) {
                         continue;
                     }
                     nap(LOOP_MILLIES);
                     if (randomNumberGenerator.nextInt(100) < expirePercent) {
                         pendingHolds.add(seatHold);
                     } else {
-                        String reservationId = ticketService.reserveSeats(seatHold.getSeatHoldId(), EMAIL_ADDRESS);
-                        if (reservationId == null) {
+                        String reservationId = null;
+                        try {
+                            reservationId = ticketService.reserveSeats(seatHold.getSeatHoldId(), EMAIL_ADDRESS);
+                        } catch (SeatHoldNotFoundException e) {
+                            throw new RuntimeException("Unexpected SeatHoldNotFoundException!");   // should not happen
+                        } catch (SeatHoldExpiredException e) {
                             pendingHolds.add(seatHold);
-                        } else {
-                            SeatHold newlyReservedHold = null;
-                            for (SeatHold pendingHold : pendingHolds) {
-                                if (sameSeats(pendingHold, seatHold)) {
-                                    newlyReservedHold = pendingHold;
-                                    break;
-                                }
+                            out.println(getSeatHoldString(seatHold));
+                            checkPending(pendingHolds);
+                            continue;
+                        }
+                        SeatHold newlyReservedHold = null;
+                        for (SeatHold pendingHold : pendingHolds) {
+                            if (sameSeats(pendingHold, seatHold)) {
+                                newlyReservedHold = pendingHold;
+                                break;
                             }
-                            if (newlyReservedHold != null) {
-                                pendingHolds.remove(newlyReservedHold);
-                            }
+                        }
+                        if (newlyReservedHold != null) {
+                            pendingHolds.remove(newlyReservedHold);
                         }
                     }
                     out.println(getSeatHoldString(seatHold));

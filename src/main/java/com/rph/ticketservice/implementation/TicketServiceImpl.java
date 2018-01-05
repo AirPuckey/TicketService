@@ -1,6 +1,9 @@
 package com.rph.ticketservice.implementation;
 
+import com.rph.ticketservice.SeatHoldNotFoundException;
+import com.rph.ticketservice.SeatsUnavailableException;
 import com.rph.ticketservice.SeatHold;
+import com.rph.ticketservice.SeatHoldExpiredException;
 import com.rph.ticketservice.TicketService;
 import com.rph.ticketservice.Venue;
 
@@ -89,11 +92,11 @@ public class TicketServiceImpl implements TicketService {
      *
      * @param numSeats      the number of seats to find and hold
      * @param customerEmail unique identifier for the customer
-     * @return a SeatHold object identifying the specific seats and related
-     * information
+     * @return a SeatHold instance identifying the specific seats and related information
+     * @throws SeatsUnavailableException if there are insufficient adjacent available seats
      */
     @Override
-    public SeatHold findAndHoldSeats(int numSeats, String customerEmail) {
+    public SeatHold findAndHoldSeats(int numSeats, String customerEmail) throws SeatsUnavailableException {
         synchronized (synchroLock) {
             return getCustomerSeatHold(findAndHoldSeatsInternal(numSeats, customerEmail));
         }
@@ -106,17 +109,23 @@ public class TicketServiceImpl implements TicketService {
      * @param customerEmail the email address of the customer to which the
      *                      seat hold is assigned
      * @return a reservation confirmation code
+     * @throws SeatHoldNotFoundException if the epecified SeatHold cannot be found
+     * @throws SeatHoldExpiredException if the specified SeatHold has expired
      */
     @Override
-    public String reserveSeats(int seatHoldId, String customerEmail) {
+    public String reserveSeats(int seatHoldId, String customerEmail)
+            throws SeatHoldNotFoundException, SeatHoldExpiredException {
         synchronized (synchroLock) {
             SeatHoldImpl seatHold = getSeatHold(seatHoldId);
+            if (seatHold == null) {
+                throw new SeatHoldNotFoundException();
+            }
             String reservationId = Integer.toString(seatHold.getSeatHoldId());
             if (seatHold.isReserved()) {
                 return reservationId;
             }
             if (seatHold.isExpired()) {
-                return null;
+                throw new SeatHoldExpiredException();
             }
             seatHold.reserve();
             Reservation reservation = new Reservation(seatHold, reservationId);
@@ -143,16 +152,12 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @VisibleForTesting
-    SeatHoldImpl findAndHoldSeatsInternal(int numSeats, String customerEmail) {
-        try {
-            List<SeatImpl> heldSeats = holdBestAdjacentSeats(numSeats, bestAvailableSeats, seatGrid);
-            SeatHoldImpl seatHold = new SeatHoldImpl(nextSeatHoldId++, customerEmail, heldSeats);
-            seatHolds.put(seatHold.getSeatHoldId(), seatHold);
-            setExpirationTimeout(seatHold, expireMillies);
-            return seatHold;
-        } catch (NoSeatsAvailableException e) {
-            return null;
-        }
+    SeatHoldImpl findAndHoldSeatsInternal(int numSeats, String customerEmail) throws SeatsUnavailableException {
+        List<SeatImpl> heldSeats = holdBestAdjacentSeats(numSeats, bestAvailableSeats, seatGrid);
+        SeatHoldImpl seatHold = new SeatHoldImpl(nextSeatHoldId++, customerEmail, heldSeats);
+        seatHolds.put(seatHold.getSeatHoldId(), seatHold);
+        setExpirationTimeout(seatHold, expireMillies);
+        return seatHold;
     }
 
     /**
@@ -162,7 +167,7 @@ public class TicketServiceImpl implements TicketService {
      * @return the corresponding seatHold
      */
     @VisibleForTesting
-    SeatHoldImpl getSeatHold(int seatHoldId) {
+    SeatHoldImpl getSeatHold(int seatHoldId) {   // TODO: check test
         return seatHolds.get(seatHoldId);
     }
 
@@ -207,11 +212,11 @@ public class TicketServiceImpl implements TicketService {
      * @param bestAvailableSeats the destination list of seats, ordered by bestness
      * @param seatGrid the grid of all seats
      * @return list of the best adjacent available seats, which are now held
-     * @throws NoSeatsAvailableException if there are insufficient adjacent available seats
+     * @throws SeatsUnavailableException if there are insufficient adjacent available seats
      */
     @VisibleForTesting
     static List<SeatImpl> holdBestAdjacentSeats(int numSeats, List<SeatImpl> bestAvailableSeats, SeatGrid seatGrid)
-            throws NoSeatsAvailableException {
+            throws SeatsUnavailableException {
         /*
          * This method populates and evaluates 10 lists of sufficient available seats,
          * working off of the bestAvailableSeats list. The best list found (best
@@ -233,7 +238,7 @@ public class TicketServiceImpl implements TicketService {
             holdSeats(winner, bestAvailableSeats, seatGrid);
             return winner;
         }
-        throw new NoSeatsAvailableException();   // almost sold out -- insufficient adjacent available seats
+        throw new SeatsUnavailableException();   // almost sold out -- insufficient adjacent available seats
     }
 
     /**

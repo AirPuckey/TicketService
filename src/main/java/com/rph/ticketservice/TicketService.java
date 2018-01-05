@@ -1,8 +1,7 @@
 package com.rph.ticketservice;
 
-import com.rph.ticketservice.implementation.SeatHoldImpl;
-
 public interface TicketService {
+
     /**
      * The number of seats in the venue that are neither held nor reserved
      *
@@ -15,10 +14,10 @@ public interface TicketService {
      *
      * @param numSeats      the number of seats to find and hold
      * @param customerEmail unique identifier for the customer
-     * @return a SeatHold object identifying the specific seats and related
-     * information, or null if sufficent adjacent seats are not available
+     * @return a SeatHold object identifying the specific seats and related information
+     * @throws SeatsUnavailableException if there are insufficient adjacent available seats
      */
-    SeatHold findAndHoldSeats(int numSeats, String customerEmail);
+    SeatHold findAndHoldSeats(int numSeats, String customerEmail) throws SeatsUnavailableException;
 
     /**
      * Commit seats held for a specific customer
@@ -26,9 +25,12 @@ public interface TicketService {
      * @param seatHoldId    the seat hold identifier
      * @param customerEmail the email address of the customer to which the
      *                      seat hold is assigned
-     * @return a reservation confirmation code, or null if the specified
-     * seatHold has expired
+     * @return a reservation confirmation code
+     * @throws SeatHoldNotFoundException if the epecified SeatHold cannot be found
+     * @throws SeatHoldExpiredException if the specified SeatHold has expired
+     *
      */
-    String reserveSeats(int seatHoldId, String customerEmail);
+    String reserveSeats(int seatHoldId, String customerEmail)
+            throws SeatHoldNotFoundException,  SeatHoldExpiredException;
 }
 
