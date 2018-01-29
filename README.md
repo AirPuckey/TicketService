@@ -52,6 +52,12 @@ external code, mocks are not used. Each class's dependent classes are
 tested and trusted, and therefore can be used in unit tests of other
 higher level classes that use them.
 
+I should mention that I favor static methods, with all the necessary
+parameters passed in as arguments. This facilitates unit testing with
+dependency injection. My unit tests make use of previously tested methods,
+which usually makes the use of mocks unnecessary. The unit tests are much
+faster to write, helping keep a project on schedule.
+
 
 Evaluation
 
